@@ -4,5 +4,5 @@ A repository containing all my mods for [Bopl Battle](https://store.steampowered
 
 ## Mods
 
- - Streaks - Display win/lose streaks next to number of wins at the end of each game.
+ - Streaks ([source](https://github.com/l0f3n/BoplBattleMods/tree/main/Streaks), [thunderstore](https://thunderstore.io/c/bopl-battle/p/Lofen/Streaks/)) - Display win/lose streaks next to number of wins at the end of each game.
 
