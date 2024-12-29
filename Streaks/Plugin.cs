@@ -5,6 +5,7 @@ using BoplFixedMath;
 using HarmonyLib;
 using System.Collections.Generic;
 using TMPro;
+using UnityEngine;
 
 namespace Streaks;
 
@@ -64,6 +65,15 @@ public class Patch
             LoseStreaks.Add(__instance.Id, 1);
     }
 
+    [HarmonyPatch(typeof(AbilitySelectController), "Init")]
+    [HarmonyPostfix]
+    public static void LoserPostInit(ref TextMeshProUGUI ___ScoreText)
+    {
+      LoseStreaks.Clear();
+      ___ScoreText.outlineWidth = 0.25f;
+      ___ScoreText.outlineColor = new Color32(0, 0, 0, 255);
+    }
+
     [HarmonyPatch(typeof(AbilitySelectController), "Update")]
     [HarmonyPrefix]
     public static bool LoserPreUpdate(ref TextMeshProUGUI ___ScoreText, ref Player ___player)
@@ -81,10 +91,19 @@ public class Patch
     {
         string target = $"{___player.GamesWon}";
         if (GetStreak(___player, LoseStreaks, out int streak))
-            target += $"<color=red>~{streak}</color>";
+            target += $"<color=red><sup>{streak}</sup></color>";
 
         if (___ScoreText.text != target)
             ___ScoreText.text = target;
+    }
+
+    [HarmonyPatch(typeof(AbilitySelectWinner), "Init")]
+    [HarmonyPostfix]
+    public static void WinnerPostInit(ref TextMeshProUGUI ___ScoreText)
+    {
+      WinStreaks.Clear();
+      ___ScoreText.outlineWidth = 0.25f;
+      ___ScoreText.outlineColor = new Color32(0, 0, 0, 255);
     }
 
     [HarmonyPatch(typeof(AbilitySelectWinner), "Update")]
@@ -93,7 +112,7 @@ public class Patch
     {
         string target = $"{___player.GamesWon}";
         if (GetStreak(___player, WinStreaks, out int streak))
-            target += $"<color=green>~{streak}</color>";
+            target += $"<color=green><sup>{streak}</sup></color>";
 
         if (___ScoreText.text != target)
             ___ScoreText.text = target;
