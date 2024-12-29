@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Streaks;
 
-[BepInPlugin("lofen.streaks", "Streaks", "1.0.0")]
+[BepInPlugin("lofen.streaks", "Streaks", "1.0.1")]
 public class Plugin : BaseUnityPlugin
 {
     internal static new ManualLogSource Logger;
