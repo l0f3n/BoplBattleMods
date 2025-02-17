@@ -28,6 +28,7 @@ public class Plugin : BaseUnityPlugin
         Assets.Add(CauseOfDeath.Electrocuted, LoadSprite(Path.Combine(assetsPath, "Electrocuted.png")));
         Assets.Add(CauseOfDeath.Exploded, LoadSprite(Path.Combine(assetsPath, "Exploded.png")));
         Assets.Add(CauseOfDeath.Froze, LoadSprite(Path.Combine(assetsPath, "Froze.png")));
+        Assets.Add(CauseOfDeath.Leashed, LoadSprite(Path.Combine(assetsPath, "Leashed.png")));
         Assets.Add(CauseOfDeath.Outside, LoadSprite(Path.Combine(assetsPath, "Outside.png")));
         Assets.Add(CauseOfDeath.PiercedByArrow, LoadSprite(Path.Combine(assetsPath, "PiercedByArrow.png")));
         Assets.Add(CauseOfDeath.PiercedBySword, LoadSprite(Path.Combine(assetsPath, "PiercedBySword.png")));
@@ -65,10 +66,10 @@ public enum CauseOfDeath
     Electrocuted,
     Exploded,
     Froze,
+    Leashed,
     Other,
     Outside,
     // Penetrated,
-    // Pet,
     PiercedByArrow,
     PiercedBySword,
 }
@@ -95,7 +96,6 @@ public class Patch
         if (!Controllers.ContainsKey(id))
             return;
 
-        // TODO: Is color handled correctly here? Probably, but i will keep this todo here just in case
         Controllers[id].SetCharacterSprite(Plugin.Assets[causeOfDeath]);
     }
 
@@ -107,8 +107,20 @@ public class Patch
     }
 
     [HarmonyPatch(typeof(PlayerCollision), "KillPlayerOnCollision")]
+    [HarmonyPrefix]
+    public static void KillPlayerPre(ref CauseOfDeath __state, PlayerBody ___body)
+    {
+        __state = CauseOfDeath.Other;
+
+        if (___body.ropeBody != null)
+        {
+            __state = CauseOfDeath.Leashed;
+        }
+    }
+
+    [HarmonyPatch(typeof(PlayerCollision), "KillPlayerOnCollision")]
     [HarmonyPostfix]
-    public static void KillPlayerPost(bool __result, IPlayerIdHolder ___playerIdHolder, ref CollisionInformation collision)
+    public static void KillPlayerPost(bool __result, CauseOfDeath __state, IPlayerIdHolder ___playerIdHolder, ref CollisionInformation collision)
     {
         // Player did not actually die
         if (!__result)
@@ -120,11 +132,17 @@ public class Patch
 
         /*FileLog.Log($"Player {id} died:");*/
         /*FileLog.Log($"  Layer: {LayerMask.LayerToName(go.layer)}");*/
-        /*FileLog.Log($"  Tag:   {t.tag}");*/
+        /*FileLog.Log($"  Tag: {t.tag}");*/
 
         CauseOfDeath causeOfDeath = CauseOfDeath.Other;
+        bool overrideOriginal = false;
 
-        if (go.layer == LayerMask.NameToLayer("Explosion"))
+        if (__state != CauseOfDeath.Other)
+        {
+            causeOfDeath = __state;
+            overrideOriginal = true;
+        }
+        else if (go.layer == LayerMask.NameToLayer("Explosion"))
         {
             if (t.CompareTag("ChainLightning"))
             {
@@ -144,12 +162,26 @@ public class Patch
             causeOfDeath = CauseOfDeath.PiercedBySword;
         }
 
-        SetAlternativeSprite(id, causeOfDeath);
+        SetAlternativeSprite(id, causeOfDeath, overrideOriginal);
+    }
+
+    [HarmonyPatch(typeof(DestroyIfOutsideSceneBounds), "selfDestruct")]
+    [HarmonyPrefix]
+    public static void SelfDestructPre(DestroyIfOutsideSceneBounds __instance, ref CauseOfDeath __state)
+    {
+        PlayerCollision pc = __instance.GetComponent<PlayerCollision>();
+        PlayerBody body = (PlayerBody)Traverse.Create(pc).Field("body").GetValue();
+
+        __state = CauseOfDeath.Other;
+        if (body.ropeBody != null)
+        {
+            __state = CauseOfDeath.Leashed;
+        }
     }
 
     [HarmonyPatch(typeof(DestroyIfOutsideSceneBounds), "selfDestruct")]
     [HarmonyPostfix]
-    public static void PostSelfDestruct(DestroyIfOutsideSceneBounds __instance, FixTransform ___fixTrans)
+    public static void selfDestructPost(DestroyIfOutsideSceneBounds __instance, CauseOfDeath __state, FixTransform ___fixTrans)
     {
         IPlayerIdHolder c = __instance.GetComponent<IPlayerIdHolder>();
         if (c == null)
@@ -172,6 +204,10 @@ public class Patch
                 causeOfDeath = CauseOfDeath.Drowned;
             }
         }
+        else if (__state != CauseOfDeath.Other)
+        {
+            causeOfDeath = __state;
+        }
         else
         {
             causeOfDeath = CauseOfDeath.Outside;
@@ -180,7 +216,6 @@ public class Patch
         SetAlternativeSprite(id, causeOfDeath, overrideOriginal: true);
     }
 
-    // TODO: Pet
     // TODO: Timestop
     // TODO: Penetrated
     // TODO: Blackhole 
