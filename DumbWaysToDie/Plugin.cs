@@ -13,6 +13,7 @@ public class Plugin : BaseUnityPlugin
     internal static new ManualLogSource Logger;
 
     public static Dictionary<CauseOfDeath, Sprite> Assets = new Dictionary<CauseOfDeath, Sprite>();
+    public static string AssetsPath;
 
     private void Start()
     {
@@ -24,14 +25,16 @@ public class Plugin : BaseUnityPlugin
             return;
         }
 
-        Assets.Add(CauseOfDeath.Drowned, LoadSprite(Path.Combine(assetsPath, "Drowned.png")));
-        Assets.Add(CauseOfDeath.Electrocuted, LoadSprite(Path.Combine(assetsPath, "Electrocuted.png")));
-        Assets.Add(CauseOfDeath.Exploded, LoadSprite(Path.Combine(assetsPath, "Exploded.png")));
-        Assets.Add(CauseOfDeath.Froze, LoadSprite(Path.Combine(assetsPath, "Froze.png")));
-        Assets.Add(CauseOfDeath.Leashed, LoadSprite(Path.Combine(assetsPath, "Leashed.png")));
-        Assets.Add(CauseOfDeath.Outside, LoadSprite(Path.Combine(assetsPath, "Outside.png")));
-        Assets.Add(CauseOfDeath.PiercedByArrow, LoadSprite(Path.Combine(assetsPath, "PiercedByArrow.png")));
-        Assets.Add(CauseOfDeath.PiercedBySword, LoadSprite(Path.Combine(assetsPath, "PiercedBySword.png")));
+        AssetsPath = assetsPath;
+
+        Assets.Add(CauseOfDeath.Drowned, LoadSprite("Drowned.png"));
+        Assets.Add(CauseOfDeath.Electrocuted, LoadSprite("Electrocuted.png"));
+        Assets.Add(CauseOfDeath.Exploded, LoadSprite("Exploded.png"));
+        Assets.Add(CauseOfDeath.Froze, LoadSprite("Froze.png"));
+        Assets.Add(CauseOfDeath.Leashed, LoadSprite("Leashed.png"));
+        Assets.Add(CauseOfDeath.Outside, LoadSprite("Outside.png"));
+        Assets.Add(CauseOfDeath.PiercedByArrow, LoadSprite("PiercedByArrow.png"));
+        Assets.Add(CauseOfDeath.PiercedBySword, LoadSprite("PiercedBySword.png"));
     }
 
     private void Awake()
@@ -43,17 +46,19 @@ public class Plugin : BaseUnityPlugin
         harmony.PatchAll(typeof(Patch));
     }
 
-    static private Texture2D LoadTexture(string path)
+    static private Texture2D LoadTexture(string name)
     {
+        // TODO: Should we load the assets from SVGs instead?
+        string path = Path.Combine(AssetsPath, name);
         byte[] array = File.ReadAllBytes(path);
         Texture2D val = new Texture2D(2, 2);
         ImageConversion.LoadImage(val, array);
         return val;
     }
 
-    static private Sprite LoadSprite(string path)
+    static private Sprite LoadSprite(string name)
     {
-        Texture2D texture = LoadTexture(path);
+        Texture2D texture = LoadTexture(name);
         return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f));
     }
 }
@@ -170,7 +175,12 @@ public class Patch
     public static void SelfDestructPre(DestroyIfOutsideSceneBounds __instance, ref CauseOfDeath __state)
     {
         PlayerCollision pc = __instance.GetComponent<PlayerCollision>();
+        if (pc == null)
+            return;
+
         PlayerBody body = (PlayerBody)Traverse.Create(pc).Field("body").GetValue();
+        if (body == null)
+            return;
 
         __state = CauseOfDeath.Other;
         if (body.ropeBody != null)
