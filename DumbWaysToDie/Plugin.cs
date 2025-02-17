@@ -210,6 +210,7 @@ public class Patch
         }
         else
         {
+            // TODO: Different depending on if we are in space or not
             causeOfDeath = CauseOfDeath.Outside;
         }
 
