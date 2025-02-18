@@ -35,6 +35,7 @@ public class Plugin : BaseUnityPlugin
         Assets.Add(CauseOfDeath.Electrocuted, LoadSprite("Electrocuted.png"));
         Assets.Add(CauseOfDeath.Exploded, LoadSprite("Exploded.png"));
         Assets.Add(CauseOfDeath.Froze, LoadSprite("Froze.png"));
+        Assets.Add(CauseOfDeath.Invisible, LoadSprite("Invisible.png"));
         Assets.Add(CauseOfDeath.Leashed, LoadSprite("Leashed.png"));
         Assets.Add(CauseOfDeath.PiercedByArrow, LoadSprite("PiercedByArrow.png"));
         Assets.Add(CauseOfDeath.PiercedBySword, LoadSprite("PiercedBySword.png"));
@@ -79,6 +80,7 @@ public enum CauseOfDeath
     Electrocuted,
     Exploded,
     Froze,
+    Invisible,
     Leashed,
     Other,
     PiercedByArrow,
@@ -126,6 +128,10 @@ public class Patch
         if (GameTime.IsTimeStopped() && player.isProtectedFromTimeStop)
         {
             causeOfDeath = CauseOfDeath.Age;
+        }
+        else if (player.isInvisible)
+        {
+            causeOfDeath = CauseOfDeath.Invisible;
         }
         else if (body.ropeBody != null)
         {
