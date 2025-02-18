@@ -29,6 +29,7 @@ public class Plugin : BaseUnityPlugin
 
         Assets.Add(CauseOfDeath.Age, LoadSprite("Age.png"));
         Assets.Add(CauseOfDeath.AloneInSpace, LoadSprite("AloneInSpace.png"));
+        Assets.Add(CauseOfDeath.BlackHole, LoadSprite("BlackHole.jpg"));
         Assets.Add(CauseOfDeath.Clouds, LoadSprite("Clouds.png"));
         Assets.Add(CauseOfDeath.Drilled, LoadSprite("Drilled.png"));
         Assets.Add(CauseOfDeath.Drowned, LoadSprite("Drowned.png"));
@@ -73,8 +74,8 @@ public class Plugin : BaseUnityPlugin
 public enum CauseOfDeath
 {
     Age,
-    // Blackholed
     AloneInSpace,
+    BlackHole,
     Clouds,
     Drilled,
     Drowned,
@@ -287,6 +288,24 @@ public class Patch
         }
 
         SetAlternativeSprite(id, causeOfDeath, overrideOriginal: true);
+    }
+
+    [HarmonyPatch(typeof(BlackHole), "OnCollide")]
+    [HarmonyPostfix]
+    public static void onCollidePost(BlackHole __instance, ref CollisionInformation collision)
+    {
+        if (collision.layer != LayerMask.NameToLayer("Player"))
+            return;
+
+        PlayerCollision pc = collision.colliderPP.fixTrans.gameObject.GetComponent<PlayerCollision>();
+        if (pc == null)
+            return;
+
+        IPlayerIdHolder idh = (IPlayerIdHolder)Traverse.Create(pc).Field("playerIdHolder").GetValue();
+        if (idh == null)
+            return;
+
+        SetAlternativeSprite(idh.GetPlayerId(), CauseOfDeath.BlackHole);
     }
 }
 
