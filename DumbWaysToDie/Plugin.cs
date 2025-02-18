@@ -27,6 +27,7 @@ public class Plugin : BaseUnityPlugin
 
         AssetsPath = assetsPath;
 
+        Assets.Add(CauseOfDeath.Age, LoadSprite("Age.png"));
         Assets.Add(CauseOfDeath.AloneInSpace, LoadSprite("AloneInSpace.png"));
         Assets.Add(CauseOfDeath.Clouds, LoadSprite("Clouds.png"));
         Assets.Add(CauseOfDeath.Drilled, LoadSprite("Drilled.png"));
@@ -69,7 +70,7 @@ public class Plugin : BaseUnityPlugin
 
 public enum CauseOfDeath
 {
-    // Aged
+    Age,
     // Blackholed
     AloneInSpace,
     Clouds,
@@ -102,13 +103,36 @@ public class Patch
 
         // We use Other as a fallback, so ignore it in that case
         if (!Plugin.Assets.ContainsKey(causeOfDeath))
+        {
+            if (causeOfDeath != CauseOfDeath.Other)
+                FileLog.Log($"No asset found for: {causeOfDeath}");
+
             return;
+        }
 
         // This should never happen, but we rather ignore this case than crash
         if (!Controllers.ContainsKey(id))
             return;
 
         Controllers[id].SetCharacterSprite(Plugin.Assets[causeOfDeath]);
+    }
+
+    static private CauseOfDeath DetermineStateBeforeDeath(int id, PlayerBody body)
+    {
+        CauseOfDeath causeOfDeath = CauseOfDeath.Other;
+
+        Player player = PlayerHandler.Get().GetPlayer(id);
+
+        if (GameTime.IsTimeStopped() && player.isProtectedFromTimeStop)
+        {
+            causeOfDeath = CauseOfDeath.Age;
+        }
+        else if (body.ropeBody != null)
+        {
+            causeOfDeath = CauseOfDeath.Leashed;
+        }
+
+        return causeOfDeath;
     }
 
     [HarmonyPatch(typeof(AbilitySelectController), "SetPlayer")]
@@ -120,14 +144,9 @@ public class Patch
 
     [HarmonyPatch(typeof(PlayerCollision), "KillPlayerOnCollision")]
     [HarmonyPrefix]
-    public static void KillPlayerPre(ref CauseOfDeath __state, PlayerBody ___body)
+    public static void KillPlayerPre(ref CauseOfDeath __state, PlayerBody ___body, IPlayerIdHolder ___playerIdHolder)
     {
-        __state = CauseOfDeath.Other;
-
-        if (___body.ropeBody != null)
-        {
-            __state = CauseOfDeath.Leashed;
-        }
+        __state = DetermineStateBeforeDeath(___playerIdHolder.GetPlayerId(), ___body);
     }
 
     [HarmonyPatch(typeof(PlayerCollision), "KillPlayerOnCollision")]
@@ -205,11 +224,13 @@ public class Patch
         if (body == null)
             return;
 
-        __state = CauseOfDeath.Other;
-        if (body.ropeBody != null)
-        {
-            __state = CauseOfDeath.Leashed;
-        }
+        IPlayerIdHolder c = __instance.GetComponent<IPlayerIdHolder>();
+        if (c == null)
+            return;
+
+        int id = c.GetPlayerId();
+
+        __state = DetermineStateBeforeDeath(id, body);
     }
 
     [HarmonyPatch(typeof(DestroyIfOutsideSceneBounds), "selfDestruct")]
@@ -255,9 +276,5 @@ public class Patch
 
         SetAlternativeSprite(id, causeOfDeath, overrideOriginal: true);
     }
-
-    // TODO: Timestop
-    // TODO: Penetrated
-    // TODO: Blackhole 
 }
 
