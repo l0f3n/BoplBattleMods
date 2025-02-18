@@ -1,6 +1,7 @@
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -32,6 +33,7 @@ public class Plugin : BaseUnityPlugin
         Assets.Add(CauseOfDeath.BlackHole, LoadSprite("BlackHole.jpg"));
         Assets.Add(CauseOfDeath.Clouds, LoadSprite("Clouds.png"));
         Assets.Add(CauseOfDeath.Drilled, LoadSprite("Drilled.png"));
+        Assets.Add(CauseOfDeath.Drilling, LoadSprite("Drilling.png"));
         Assets.Add(CauseOfDeath.Drowned, LoadSprite("Drowned.png"));
         Assets.Add(CauseOfDeath.Electrocuted, LoadSprite("Electrocuted.png"));
         Assets.Add(CauseOfDeath.Exploded, LoadSprite("Exploded.png"));
@@ -39,6 +41,7 @@ public class Plugin : BaseUnityPlugin
         Assets.Add(CauseOfDeath.Invisible, LoadSprite("Invisible.png"));
         Assets.Add(CauseOfDeath.Leashed, LoadSprite("Leashed.png"));
         Assets.Add(CauseOfDeath.Macho, LoadSprite("Macho.png"));
+        Assets.Add(CauseOfDeath.Meditating, LoadSprite("Meditating.png"));
         Assets.Add(CauseOfDeath.PiercedByArrow, LoadSprite("PiercedByArrow.png"));
         Assets.Add(CauseOfDeath.PiercedBySword, LoadSprite("PiercedBySword.png"));
         Assets.Add(CauseOfDeath.Rocked, LoadSprite("Rocked.png"));
@@ -78,6 +81,7 @@ public enum CauseOfDeath
     BlackHole,
     Clouds,
     Drilled,
+    Drilling,
     Drowned,
     Electrocuted,
     Exploded,
@@ -85,6 +89,7 @@ public enum CauseOfDeath
     Invisible,
     Leashed,
     Macho,
+    Meditating,
     Other,
     PiercedByArrow,
     PiercedBySword,
@@ -96,6 +101,8 @@ public enum CauseOfDeath
 public class Patch
 {
     public static Dictionary<int, AbilitySelectController> Controllers = new Dictionary<int, AbilitySelectController>();
+    public static Dictionary<int, bool> IsDrilling = new Dictionary<int, bool>();
+    public static Dictionary<int, bool> IsMeditating = new Dictionary<int, bool>();
 
     static private void SetAlternativeSprite(int id, CauseOfDeath causeOfDeath, bool overrideOriginal = false)
     {
@@ -127,6 +134,8 @@ public class Patch
         CauseOfDeath causeOfDeath = CauseOfDeath.Other;
 
         Player player = PlayerHandler.Get().GetPlayer(id);
+        IsMeditating.TryGetValue(player.Id, out bool isMeditating);
+        IsDrilling.TryGetValue(player.Id, out bool isDrilling);
 
         if (GameTime.IsTimeStopped() && player.isProtectedFromTimeStop)
         {
@@ -143,6 +152,14 @@ public class Patch
         else if (player.InMachoThrow)
         {
             causeOfDeath = CauseOfDeath.Macho;
+        }
+        else if (isMeditating)
+        {
+            causeOfDeath = CauseOfDeath.Meditating;
+        }
+        else if (isDrilling)
+        {
+            causeOfDeath = CauseOfDeath.Drilling;
         }
 
         return causeOfDeath;
@@ -307,5 +324,34 @@ public class Patch
 
         SetAlternativeSprite(idh.GetPlayerId(), CauseOfDeath.BlackHole);
     }
+
+    [HarmonyPatch(typeof(CastSpell), nameof(CastSpell.OnEnterAbility))]
+    [HarmonyPostfix]
+    public static void CastOnEnterPost(ref PlayerInfo ___playerInfo)
+    {
+        IsMeditating[___playerInfo.playerId] = true;
+    }
+
+    [HarmonyPatch(typeof(CastSpell), nameof(CastSpell.ExitAbility), new Type[] { typeof(AbilityExitInfo) })]
+    [HarmonyPostfix]
+    public static void CastExitPost(ref PlayerInfo ___playerInfo)
+    {
+        IsMeditating[___playerInfo.playerId] = false;
+    }
+
+    [HarmonyPatch(typeof(Drill), nameof(Drill.OnEnterAbility))]
+    [HarmonyPostfix]
+    public static void DrillOnEnterPost(ref PlayerInfo ___playerInfo)
+    {
+        IsDrilling[___playerInfo.playerId] = true;
+    }
+
+    [HarmonyPatch(typeof(Drill), nameof(Drill.ExitAbility), new Type[] { typeof(AbilityExitInfo) })]
+    [HarmonyPostfix]
+    public static void DrillExitPost(ref PlayerInfo ___playerInfo)
+    {
+        IsDrilling[___playerInfo.playerId] = false;
+    }
+
 }
 
