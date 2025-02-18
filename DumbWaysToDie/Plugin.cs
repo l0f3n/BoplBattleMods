@@ -27,6 +27,7 @@ public class Plugin : BaseUnityPlugin
 
         AssetsPath = assetsPath;
 
+        Assets.Add(CauseOfDeath.Drilled, LoadSprite("Drilled.png"));
         Assets.Add(CauseOfDeath.Drowned, LoadSprite("Drowned.png"));
         Assets.Add(CauseOfDeath.Electrocuted, LoadSprite("Electrocuted.png"));
         Assets.Add(CauseOfDeath.Exploded, LoadSprite("Exploded.png"));
@@ -67,6 +68,7 @@ public enum CauseOfDeath
 {
     // Aged
     // Blackholed
+    Drilled,
     Drowned,
     Electrocuted,
     Exploded,
@@ -152,6 +154,10 @@ public class Patch
             if (t.CompareTag("ChainLightning"))
             {
                 causeOfDeath = CauseOfDeath.Electrocuted;
+            }
+            else if (t.CompareTag("explosion"))
+            {
+                causeOfDeath = CauseOfDeath.Drilled;
             }
             else
             {
