@@ -57,20 +57,22 @@ public class Plugin : BaseUnityPlugin
         harmony.PatchAll(typeof(Patch));
     }
 
-    static private Texture2D LoadTexture(string name)
-    {
-        // TODO: Should we load the assets from SVGs instead?
-        string path = Path.Combine(AssetsPath, name);
-        byte[] array = File.ReadAllBytes(path);
-        Texture2D val = new Texture2D(2, 2);
-        ImageConversion.LoadImage(val, array);
-        return val;
-    }
-
     static private Sprite LoadSprite(string name)
     {
-        Texture2D texture = LoadTexture(name);
-        return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+        string path = Path.Combine(AssetsPath, name);
+        byte[] bytes = File.ReadAllBytes(path);
+
+        Texture2D tex = new Texture2D(2, 2);
+        ImageConversion.LoadImage(tex, bytes);
+
+        // Doing all of this is probably useless, but im too lazy to delete it
+        Texture2D newTex = new Texture2D(tex.width, tex.height, TextureFormat.RGBA32, true);
+        newTex.name = name;
+        newTex.filterMode = FilterMode.Bilinear;
+        newTex.SetPixels(tex.GetPixels());
+        newTex.Apply();
+
+        return Sprite.Create(newTex, new Rect(0f, 0f, newTex.width, newTex.height), new Vector2(0.5f, 0.5f), 60);
     }
 }
 
