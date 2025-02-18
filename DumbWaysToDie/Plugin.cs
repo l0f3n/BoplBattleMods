@@ -27,13 +27,14 @@ public class Plugin : BaseUnityPlugin
 
         AssetsPath = assetsPath;
 
+        Assets.Add(CauseOfDeath.AloneInSpace, LoadSprite("AloneInSpace.png"));
+        Assets.Add(CauseOfDeath.Clouds, LoadSprite("Clouds.png"));
         Assets.Add(CauseOfDeath.Drilled, LoadSprite("Drilled.png"));
         Assets.Add(CauseOfDeath.Drowned, LoadSprite("Drowned.png"));
         Assets.Add(CauseOfDeath.Electrocuted, LoadSprite("Electrocuted.png"));
         Assets.Add(CauseOfDeath.Exploded, LoadSprite("Exploded.png"));
         Assets.Add(CauseOfDeath.Froze, LoadSprite("Froze.png"));
         Assets.Add(CauseOfDeath.Leashed, LoadSprite("Leashed.png"));
-        Assets.Add(CauseOfDeath.Outside, LoadSprite("Outside.png"));
         Assets.Add(CauseOfDeath.PiercedByArrow, LoadSprite("PiercedByArrow.png"));
         Assets.Add(CauseOfDeath.PiercedBySword, LoadSprite("PiercedBySword.png"));
         Assets.Add(CauseOfDeath.Rocked, LoadSprite("Rocked.png"));
@@ -70,6 +71,8 @@ public enum CauseOfDeath
 {
     // Aged
     // Blackholed
+    AloneInSpace,
+    Clouds,
     Drilled,
     Drowned,
     Electrocuted,
@@ -77,8 +80,6 @@ public enum CauseOfDeath
     Froze,
     Leashed,
     Other,
-    Outside,
-    // Penetrated,
     PiercedByArrow,
     PiercedBySword,
     Rocked,
@@ -242,8 +243,14 @@ public class Patch
         }
         else
         {
-            // TODO: Different depending on if we are in space or not
-            causeOfDeath = CauseOfDeath.Outside;
+            if (Constants.leveltype == LevelType.grass)
+            {
+                causeOfDeath = CauseOfDeath.Clouds;
+            }
+            else
+            {
+                causeOfDeath = CauseOfDeath.AloneInSpace;
+            }
         }
 
         SetAlternativeSprite(id, causeOfDeath, overrideOriginal: true);
