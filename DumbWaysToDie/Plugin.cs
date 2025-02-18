@@ -36,6 +36,8 @@ public class Plugin : BaseUnityPlugin
         Assets.Add(CauseOfDeath.Outside, LoadSprite("Outside.png"));
         Assets.Add(CauseOfDeath.PiercedByArrow, LoadSprite("PiercedByArrow.png"));
         Assets.Add(CauseOfDeath.PiercedBySword, LoadSprite("PiercedBySword.png"));
+        Assets.Add(CauseOfDeath.Rocked, LoadSprite("Rocked.png"));
+        Assets.Add(CauseOfDeath.Rolled, LoadSprite("Rolled.png"));
     }
 
     private void Awake()
@@ -79,6 +81,8 @@ public enum CauseOfDeath
     // Penetrated,
     PiercedByArrow,
     PiercedBySword,
+    Rocked,
+    Rolled,
 }
 
 [HarmonyPatch]
@@ -171,6 +175,18 @@ public class Patch
         else if (go.layer == LayerMask.NameToLayer("LethalTerrain") && t.CompareTag("explosion"))
         {
             causeOfDeath = CauseOfDeath.PiercedBySword;
+        }
+        else if (go.layer == LayerMask.NameToLayer("Player") && t.CompareTag("Ability"))
+        {
+            Ability ability = go.GetComponent<Ability>();
+            if (ability.ToString().Contains("Rock"))
+            {
+                causeOfDeath = CauseOfDeath.Rocked;
+            }
+            else if (ability.ToString().Contains("Roll"))
+            {
+                causeOfDeath = CauseOfDeath.Rolled;
+            }
         }
 
         SetAlternativeSprite(id, causeOfDeath, overrideOriginal);
