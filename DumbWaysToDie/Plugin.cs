@@ -37,6 +37,7 @@ public class Plugin : BaseUnityPlugin
         Assets.Add(CauseOfDeath.Froze, LoadSprite("Froze.png"));
         Assets.Add(CauseOfDeath.Invisible, LoadSprite("Invisible.png"));
         Assets.Add(CauseOfDeath.Leashed, LoadSprite("Leashed.png"));
+        Assets.Add(CauseOfDeath.Macho, LoadSprite("Macho.png"));
         Assets.Add(CauseOfDeath.PiercedByArrow, LoadSprite("PiercedByArrow.png"));
         Assets.Add(CauseOfDeath.PiercedBySword, LoadSprite("PiercedBySword.png"));
         Assets.Add(CauseOfDeath.Rocked, LoadSprite("Rocked.png"));
@@ -82,6 +83,7 @@ public enum CauseOfDeath
     Froze,
     Invisible,
     Leashed,
+    Macho,
     Other,
     PiercedByArrow,
     PiercedBySword,
@@ -136,6 +138,10 @@ public class Patch
         else if (body.ropeBody != null)
         {
             causeOfDeath = CauseOfDeath.Leashed;
+        }
+        else if (player.InMachoThrow)
+        {
+            causeOfDeath = CauseOfDeath.Macho;
         }
 
         return causeOfDeath;
