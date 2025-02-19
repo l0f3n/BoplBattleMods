@@ -74,7 +74,7 @@ public class Plugin : BaseUnityPlugin
 
         watch.Stop();
 
-        Logger.LogDebug($"Loaded texture '{newTex.name}' in {watch.ElapsedMilliseconds} ms");
+        Logger.LogInfo($"Loaded texture '{newTex.name}' in {watch.ElapsedMilliseconds} ms");
 
         return newTex;
     }
@@ -153,15 +153,19 @@ public class Patch
             return;
         }
 
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+
         Texture2D tex = Plugin.Assets[causeOfDeath];
         Sprite sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 60);
-
-        Plugin.Logger.LogInfo($"Setting sprite {tex.name} for player {id}");
 
         AbilitySelectCircles[id].SetCharacterSprite(sprite);
 
         CausesOfDeath.Remove(id);
         AbilitySelectCircles.Remove(id);
+
+        watch.Stop();
+
+        Plugin.Logger.LogInfo($"Set sprite '{tex.name}' for player {id} in {watch.ElapsedMilliseconds} ms");
     }
 
     static private void SetCauseOfDeath(int id, CauseOfDeath causeOfDeath, bool overrideOriginal = false)
