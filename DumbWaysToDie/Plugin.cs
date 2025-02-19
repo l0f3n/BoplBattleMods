@@ -57,7 +57,6 @@ public class Plugin : BaseUnityPlugin
 
     static private Texture2D LoadTexture(string name)
     {
-
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
         string path = Path.Combine(AssetsPath, name);
@@ -75,7 +74,7 @@ public class Plugin : BaseUnityPlugin
 
         watch.Stop();
 
-        Logger.LogInfo($"Loaded texture '{newTex.name}' in {watch.ElapsedMilliseconds} ms");
+        Logger.LogDebug($"Loaded texture '{newTex.name}' in {watch.ElapsedMilliseconds} ms");
 
         return newTex;
     }
@@ -107,7 +106,9 @@ public enum CauseOfDeath
 [HarmonyPatch]
 public class Patch
 {
-    public static Dictionary<int, AbilitySelectController> Controllers = new Dictionary<int, AbilitySelectController>();
+    public static Dictionary<int, CauseOfDeath> CausesOfDeath = new Dictionary<int, CauseOfDeath>();
+    public static Dictionary<int, AbilitySelectController> AbilitySelectControllers = new Dictionary<int, AbilitySelectController>();
+    public static Dictionary<int, AbilitySelectWinner> AbilitySelectWinners = new Dictionary<int, AbilitySelectWinner>();
     public static Dictionary<int, bool> IsDrilling = new Dictionary<int, bool>();
     public static Dictionary<int, bool> IsMeditating = new Dictionary<int, bool>();
 
@@ -129,21 +130,22 @@ public class Patch
     /*    return newTex;*/
     /*}*/
 
-    static private void SetAlternativeSprite(int id, CauseOfDeath causeOfDeath, bool overrideOriginal = false)
+    static private void TrySetAlternateSprite(int id)
     {
-
-        // TODO: This is sometimes called even for the winner of the round
-        // which has no effect. this is unecessary, so we should not do that
-
-        /*FileLog.Log($"Cause of death: {causeOfDeath.ToString()}");*/
-
-
-        // Player has a standard cause of death, ignore our special ones
-        Player p = PlayerHandler.Get().GetPlayer(id);
-        if (p.CauseOfDeath != global::CauseOfDeath.Other && !overrideOriginal)
+        if (!CausesOfDeath.ContainsKey(id))
+        {
+            Plugin.Logger.LogDebug($"No cause of death for player {id} yet");
             return;
+        }
 
-        // We use Other as a fallback, so ignore it in that case
+        if (!AbilitySelectControllers.ContainsKey(id) && !AbilitySelectWinners.ContainsKey(id))
+        {
+            Plugin.Logger.LogDebug($"No ability select for player {id} yet");
+            return;
+        }
+
+        CauseOfDeath causeOfDeath = CausesOfDeath[id];
+
         if (!Plugin.Assets.ContainsKey(causeOfDeath))
         {
             if (causeOfDeath != CauseOfDeath.Other)
@@ -152,17 +154,42 @@ public class Patch
             return;
         }
 
-        // This should never happen, but we rather ignore this case than crash
-        if (!Controllers.ContainsKey(id))
-        {
-            Plugin.Logger.LogError($"No controller set for player {id}");
-            return;
-        }
-
         Texture2D tex = Plugin.Assets[causeOfDeath];
         Sprite sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 60);
 
-        Controllers[id].SetCharacterSprite(sprite);
+        Plugin.Logger.LogInfo($"Setting sprite {tex.name} for player {id}");
+
+        // TODO: Potential performance problem
+
+        if (AbilitySelectControllers.ContainsKey(id))
+        {
+            AbilitySelectControllers[id].SetCharacterSprite(sprite);
+        }
+
+        if (AbilitySelectWinners.ContainsKey(id))
+        {
+            AbilitySelectWinners[id].SetCharacterSprite(sprite);
+        }
+    }
+
+    static private void SetCauseOfDeath(int id, CauseOfDeath causeOfDeath, bool overrideOriginal = false)
+    {
+        if (GameSessionHandler.HasGameEnded())
+        {
+            Plugin.Logger.LogDebug("Not setting cause of death, game has already ended");
+            return;
+        }
+
+        // Player has a standard cause of death, ignore our special ones
+        Player p = PlayerHandler.Get().GetPlayer(id);
+        if (p.CauseOfDeath != global::CauseOfDeath.Other && !overrideOriginal)
+            return;
+
+        Plugin.Logger.LogInfo($"Setting cause of death {causeOfDeath} for player {id}");
+
+        CausesOfDeath[id] = causeOfDeath;
+
+        TrySetAlternateSprite(id);
     }
 
     static private CauseOfDeath DetermineStateBeforeDeath(int id, PlayerBody body)
@@ -201,11 +228,36 @@ public class Patch
         return causeOfDeath;
     }
 
+    [HarmonyPatch(typeof(GameSessionHandler), "StartSpawnPlayersRoutine")]
+    [HarmonyPrefix]
+    public static void GameSessionHandlerStartSpawnPlayersRoutinePre()
+    {
+        Plugin.Logger.LogDebug("Resetting causes of death");
+        CausesOfDeath.Clear();
+        AbilitySelectControllers.Clear();
+        AbilitySelectWinners.Clear();
+    }
+
+    // TODO: Maybe we can just listen to SetPlayer in AbilitySelectCircle just
+    // save one instance of each and just look at it to determine if they are
+    // a winner or a loser...
+
     [HarmonyPatch(typeof(AbilitySelectController), "SetPlayer")]
     [HarmonyPostfix]
-    public static void SetPlayerPost(AbilitySelectController __instance, int id)
+    public static void AbilitySelectControllerSetPlayerPost(AbilitySelectController __instance, int id)
     {
-        Controllers[id] = __instance;
+        Plugin.Logger.LogDebug($"Setting ability select controller for player {id}");
+        AbilitySelectControllers[id] = __instance;
+        TrySetAlternateSprite(id);
+    }
+
+    [HarmonyPatch(typeof(AbilitySelectWinner), "SetPlayer")]
+    [HarmonyPostfix]
+    public static void AbilitySelectWinnerSetPlayerPost(AbilitySelectWinner __instance, int id)
+    {
+        Plugin.Logger.LogDebug($"Setting ability select winner for player {id}");
+        AbilitySelectWinners[id] = __instance;
+        TrySetAlternateSprite(id);
     }
 
     [HarmonyPatch(typeof(PlayerCollision), "KillPlayerOnCollision")]
@@ -275,7 +327,7 @@ public class Patch
             }
         }
 
-        SetAlternativeSprite(id, causeOfDeath, overrideOriginal);
+        SetCauseOfDeath(id, causeOfDeath, overrideOriginal);
     }
 
     [HarmonyPatch(typeof(DestroyIfOutsideSceneBounds), "selfDestruct")]
@@ -309,6 +361,9 @@ public class Patch
 
         int id = c.GetPlayerId();
 
+        // TODO: This triggers when we shoot arrows outside the stage, we must
+        // detect in a better way if a player actually died or not.
+
         /*FileLog.Log($"Player {id} outside bounds!");*/
 
         CauseOfDeath causeOfDeath = CauseOfDeath.Other;
@@ -340,7 +395,7 @@ public class Patch
             }
         }
 
-        SetAlternativeSprite(id, causeOfDeath, overrideOriginal: true);
+        SetCauseOfDeath(id, causeOfDeath, overrideOriginal: true);
     }
 
     [HarmonyPatch(typeof(BlackHole), "OnCollide")]
@@ -358,7 +413,7 @@ public class Patch
         if (idh == null)
             return;
 
-        SetAlternativeSprite(idh.GetPlayerId(), CauseOfDeath.BlackHole);
+        SetCauseOfDeath(idh.GetPlayerId(), CauseOfDeath.BlackHole);
     }
 
     [HarmonyPatch(typeof(CastSpell), nameof(CastSpell.OnEnterAbility))]
