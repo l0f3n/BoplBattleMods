@@ -107,8 +107,7 @@ public enum CauseOfDeath
 public class Patch
 {
     public static Dictionary<int, CauseOfDeath> CausesOfDeath = new Dictionary<int, CauseOfDeath>();
-    public static Dictionary<int, AbilitySelectController> AbilitySelectControllers = new Dictionary<int, AbilitySelectController>();
-    public static Dictionary<int, AbilitySelectWinner> AbilitySelectWinners = new Dictionary<int, AbilitySelectWinner>();
+    public static Dictionary<int, AbilitySelectCircle> AbilitySelectCircles = new Dictionary<int, AbilitySelectCircle>();
     public static Dictionary<int, bool> IsDrilling = new Dictionary<int, bool>();
     public static Dictionary<int, bool> IsMeditating = new Dictionary<int, bool>();
 
@@ -138,7 +137,7 @@ public class Patch
             return;
         }
 
-        if (!AbilitySelectControllers.ContainsKey(id) && !AbilitySelectWinners.ContainsKey(id))
+        if (!AbilitySelectCircles.ContainsKey(id))
         {
             Plugin.Logger.LogDebug($"No ability select for player {id} yet");
             return;
@@ -159,24 +158,17 @@ public class Patch
 
         Plugin.Logger.LogInfo($"Setting sprite {tex.name} for player {id}");
 
-        // TODO: Potential performance problem
+        AbilitySelectCircles[id].SetCharacterSprite(sprite);
 
-        if (AbilitySelectControllers.ContainsKey(id))
-        {
-            AbilitySelectControllers[id].SetCharacterSprite(sprite);
-        }
-
-        if (AbilitySelectWinners.ContainsKey(id))
-        {
-            AbilitySelectWinners[id].SetCharacterSprite(sprite);
-        }
+        CausesOfDeath.Remove(id);
+        AbilitySelectCircles.Remove(id);
     }
 
     static private void SetCauseOfDeath(int id, CauseOfDeath causeOfDeath, bool overrideOriginal = false)
     {
         if (GameSessionHandler.HasGameEnded())
         {
-            Plugin.Logger.LogDebug("Not setting cause of death, game has already ended");
+            Plugin.Logger.LogDebug($"Refusing to set cause of death {causeOfDeath} for player {id}, game is over");
             return;
         }
 
@@ -185,7 +177,7 @@ public class Patch
         if (p.CauseOfDeath != global::CauseOfDeath.Other && !overrideOriginal)
             return;
 
-        Plugin.Logger.LogInfo($"Setting cause of death {causeOfDeath} for player {id}");
+        Plugin.Logger.LogDebug($"Setting cause of death {causeOfDeath} for player {id}");
 
         CausesOfDeath[id] = causeOfDeath;
 
@@ -232,31 +224,17 @@ public class Patch
     [HarmonyPrefix]
     public static void GameSessionHandlerStartSpawnPlayersRoutinePre()
     {
-        Plugin.Logger.LogDebug("Resetting causes of death");
+        Plugin.Logger.LogDebug("Resetting...");
         CausesOfDeath.Clear();
-        AbilitySelectControllers.Clear();
-        AbilitySelectWinners.Clear();
+        AbilitySelectCircles.Clear();
     }
 
-    // TODO: Maybe we can just listen to SetPlayer in AbilitySelectCircle just
-    // save one instance of each and just look at it to determine if they are
-    // a winner or a loser...
-
-    [HarmonyPatch(typeof(AbilitySelectController), "SetPlayer")]
+    [HarmonyPatch(typeof(AbilitySelectCircle), "SetPlayer")]
     [HarmonyPostfix]
-    public static void AbilitySelectControllerSetPlayerPost(AbilitySelectController __instance, int id)
+    public static void AbilitySelectCircleSetPlayerPost(AbilitySelectCircle __instance, int id, bool isWinner)
     {
-        Plugin.Logger.LogDebug($"Setting ability select controller for player {id}");
-        AbilitySelectControllers[id] = __instance;
-        TrySetAlternateSprite(id);
-    }
-
-    [HarmonyPatch(typeof(AbilitySelectWinner), "SetPlayer")]
-    [HarmonyPostfix]
-    public static void AbilitySelectWinnerSetPlayerPost(AbilitySelectWinner __instance, int id)
-    {
-        Plugin.Logger.LogDebug($"Setting ability select winner for player {id}");
-        AbilitySelectWinners[id] = __instance;
+        Plugin.Logger.LogDebug($"Setting ability select circle for player {id} (Winner: {isWinner})");
+        AbilitySelectCircles[id] = __instance;
         TrySetAlternateSprite(id);
     }
 
