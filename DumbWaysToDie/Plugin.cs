@@ -333,14 +333,14 @@ public class Patch
     [HarmonyPostfix]
     public static void selfDestructPost(DestroyIfOutsideSceneBounds __instance, CauseOfDeath __state, FixTransform ___fixTrans)
     {
+        if (__instance.gameObject.layer != LayerMask.NameToLayer("Player"))
+            return;
+
         IPlayerIdHolder c = __instance.GetComponent<IPlayerIdHolder>();
         if (c == null)
             return;
 
         int id = c.GetPlayerId();
-
-        // TODO: This triggers when we shoot arrows outside the stage, we must
-        // detect in a better way if a player actually died or not.
 
         /*FileLog.Log($"Player {id} outside bounds!");*/
 
