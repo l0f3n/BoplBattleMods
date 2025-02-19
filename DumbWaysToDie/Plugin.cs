@@ -13,52 +13,53 @@ public class Plugin : BaseUnityPlugin
 {
     internal static new ManualLogSource Logger;
 
-    public static Dictionary<CauseOfDeath, Sprite> Assets = new Dictionary<CauseOfDeath, Sprite>();
+    public static Dictionary<CauseOfDeath, Texture2D> Assets = new Dictionary<CauseOfDeath, Texture2D>();
     public static string AssetsPath;
-
-    private void Start()
-    {
-        string basePath = Path.GetDirectoryName(((BaseUnityPlugin)this).Info.Location);
-        string assetsPath = Path.Combine(basePath, "Assets");
-        if (!Directory.Exists(assetsPath))
-        {
-            Logger.LogError("Assets folder not found");
-            return;
-        }
-
-        AssetsPath = assetsPath;
-
-        Assets.Add(CauseOfDeath.Age, LoadSprite("Age.png"));
-        Assets.Add(CauseOfDeath.AloneInSpace, LoadSprite("AloneInSpace.png"));
-        Assets.Add(CauseOfDeath.BlackHole, LoadSprite("BlackHole.jpg"));
-        Assets.Add(CauseOfDeath.Clouds, LoadSprite("Clouds.png"));
-        Assets.Add(CauseOfDeath.Drilled, LoadSprite("Drilled.png"));
-        Assets.Add(CauseOfDeath.Drilling, LoadSprite("Drilling.png"));
-        Assets.Add(CauseOfDeath.Drowned, LoadSprite("Drowned.png"));
-        Assets.Add(CauseOfDeath.Electrocuted, LoadSprite("Electrocuted.png"));
-        Assets.Add(CauseOfDeath.Exploded, LoadSprite("Exploded.png"));
-        Assets.Add(CauseOfDeath.Froze, LoadSprite("Froze.png"));
-        Assets.Add(CauseOfDeath.Invisible, LoadSprite("Invisible.png"));
-        Assets.Add(CauseOfDeath.Leashed, LoadSprite("Leashed.png"));
-        Assets.Add(CauseOfDeath.Macho, LoadSprite("Macho.png"));
-        Assets.Add(CauseOfDeath.Meditating, LoadSprite("Meditating.png"));
-        Assets.Add(CauseOfDeath.PiercedByArrow, LoadSprite("PiercedByArrow.png"));
-        Assets.Add(CauseOfDeath.PiercedBySword, LoadSprite("PiercedBySword.png"));
-        Assets.Add(CauseOfDeath.Rocked, LoadSprite("Rocked.png"));
-        Assets.Add(CauseOfDeath.Rolled, LoadSprite("Rolled.png"));
-    }
 
     private void Awake()
     {
         Logger = base.Logger;
+
+        string basePath = Path.GetDirectoryName(((BaseUnityPlugin)this).Info.Location);
+        string assetsPath = Path.Combine(basePath, "Assets");
+
+        if (!Directory.Exists(assetsPath))
+        {
+            Logger.LogError("Assets folder not found!");
+        }
+
+        AssetsPath = assetsPath;
+
+        Assets.Add(CauseOfDeath.Age, LoadTexture("Age.png"));
+        Assets.Add(CauseOfDeath.AloneInSpace, LoadTexture("AloneInSpace.png"));
+        Assets.Add(CauseOfDeath.BlackHole, LoadTexture("BlackHole.jpg"));
+        Assets.Add(CauseOfDeath.Clouds, LoadTexture("Clouds.png"));
+        Assets.Add(CauseOfDeath.Drilled, LoadTexture("Drilled.png"));
+        Assets.Add(CauseOfDeath.Drilling, LoadTexture("Drilling.png"));
+        Assets.Add(CauseOfDeath.Drowned, LoadTexture("Drowned.png"));
+        Assets.Add(CauseOfDeath.Electrocuted, LoadTexture("Electrocuted.png"));
+        Assets.Add(CauseOfDeath.Exploded, LoadTexture("Exploded.png"));
+        Assets.Add(CauseOfDeath.Froze, LoadTexture("Froze.png"));
+        Assets.Add(CauseOfDeath.Invisible, LoadTexture("Invisible.png"));
+        Assets.Add(CauseOfDeath.Leashed, LoadTexture("Leashed.png"));
+        Assets.Add(CauseOfDeath.Macho, LoadTexture("Macho.png"));
+        Assets.Add(CauseOfDeath.Meditating, LoadTexture("Meditating.png"));
+        Assets.Add(CauseOfDeath.PiercedByArrow, LoadTexture("PiercedByArrow.png"));
+        Assets.Add(CauseOfDeath.PiercedBySword, LoadTexture("PiercedBySword.png"));
+        Assets.Add(CauseOfDeath.Rocked, LoadTexture("Rocked.png"));
+        Assets.Add(CauseOfDeath.Rolled, LoadTexture("Rolled.png"));
+
         Logger.LogInfo($"Plugin Dumb Ways to Die is loaded!");
 
         Harmony harmony = new("lofen.dumbWaysToDie");
         harmony.PatchAll(typeof(Patch));
     }
 
-    static private Sprite LoadSprite(string name)
+    static private Texture2D LoadTexture(string name)
     {
+
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+
         string path = Path.Combine(AssetsPath, name);
         byte[] bytes = File.ReadAllBytes(path);
 
@@ -72,7 +73,11 @@ public class Plugin : BaseUnityPlugin
         newTex.SetPixels(tex.GetPixels());
         newTex.Apply();
 
-        return Sprite.Create(newTex, new Rect(0f, 0f, newTex.width, newTex.height), new Vector2(0.5f, 0.5f), 60);
+        watch.Stop();
+
+        Logger.LogInfo($"Loaded texture '{newTex.name}' in {watch.ElapsedMilliseconds} ms");
+
+        return newTex;
     }
 }
 
@@ -106,9 +111,32 @@ public class Patch
     public static Dictionary<int, bool> IsDrilling = new Dictionary<int, bool>();
     public static Dictionary<int, bool> IsMeditating = new Dictionary<int, bool>();
 
+    /*public static Color RawKillerColor = new Color(0, 0, 1);*/
+    /**/
+    /*static private Texture2D Recolor(Texture2D tex, Color oldColor, Color newColor)*/
+    /*{*/
+    /*    Texture2D newTex = new Texture2D(tex.width, tex.height, tex.format, true);*/
+    /*    newTex.name = tex.name;*/
+    /*    newTex.filterMode = tex.filterMode;*/
+    /*    Color[] pixels = tex.GetPixels();*/
+    /*    for (int i = 0; i < pixels.Length; i++)*/
+    /*    {*/
+    /*        if (pixels[i] == oldColor)*/
+    /*            pixels[i] = newColor;*/
+    /*    }*/
+    /*    newTex.SetPixels(pixels);*/
+    /*    newTex.Apply();*/
+    /*    return newTex;*/
+    /*}*/
+
     static private void SetAlternativeSprite(int id, CauseOfDeath causeOfDeath, bool overrideOriginal = false)
     {
+
+        // TODO: This is sometimes called even for the winner of the round
+        // which has no effect. this is unecessary, so we should not do that
+
         /*FileLog.Log($"Cause of death: {causeOfDeath.ToString()}");*/
+
 
         // Player has a standard cause of death, ignore our special ones
         Player p = PlayerHandler.Get().GetPlayer(id);
@@ -119,16 +147,22 @@ public class Patch
         if (!Plugin.Assets.ContainsKey(causeOfDeath))
         {
             if (causeOfDeath != CauseOfDeath.Other)
-                FileLog.Log($"No asset found for: {causeOfDeath}");
+                Plugin.Logger.LogWarning($"No asset found for: {causeOfDeath}");
 
             return;
         }
 
         // This should never happen, but we rather ignore this case than crash
         if (!Controllers.ContainsKey(id))
+        {
+            Plugin.Logger.LogError($"No controller set for player {id}");
             return;
+        }
 
-        Controllers[id].SetCharacterSprite(Plugin.Assets[causeOfDeath]);
+        Texture2D tex = Plugin.Assets[causeOfDeath];
+        Sprite sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 60);
+
+        Controllers[id].SetCharacterSprite(sprite);
     }
 
     static private CauseOfDeath DetermineStateBeforeDeath(int id, PlayerBody body)
