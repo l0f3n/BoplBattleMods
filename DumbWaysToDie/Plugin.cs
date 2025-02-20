@@ -211,7 +211,7 @@ public class Patch
         {
             causeOfDeath = CauseOfDeath.Invisible;
         }
-        else if (body.ropeBody != null)
+        else if (body != null && body.ropeBody != null)
         {
             causeOfDeath = CauseOfDeath.Leashed;
         }
@@ -324,12 +324,13 @@ public class Patch
     [HarmonyPrefix]
     public static void SelfDestructPre(DestroyIfOutsideSceneBounds __instance, ref CauseOfDeath __state)
     {
-        PlayerCollision pc = __instance.GetComponent<PlayerCollision>();
-        if (pc == null)
+        __state = CauseOfDeath.Other;
+
+        if (__instance.gameObject.layer != LayerMask.NameToLayer("Player"))
             return;
 
-        PlayerBody body = (PlayerBody)Traverse.Create(pc).Field("body").GetValue();
-        if (body == null)
+        PlayerCollision pc = __instance.GetComponent<PlayerCollision>();
+        if (pc == null)
             return;
 
         IPlayerIdHolder c = __instance.GetComponent<IPlayerIdHolder>();
@@ -337,6 +338,7 @@ public class Patch
             return;
 
         int id = c.GetPlayerId();
+        PlayerBody body = (PlayerBody)Traverse.Create(pc).Field("body").GetValue();
 
         __state = DetermineStateBeforeDeath(id, body);
     }
