@@ -231,6 +231,8 @@ public class Patch
         Plugin.Logger.LogDebug("Resetting...");
         CausesOfDeath.Clear();
         AbilitySelectCircles.Clear();
+        IsDrilling.Clear();
+        IsMeditating.Clear();
     }
 
     [HarmonyPatch(typeof(AbilitySelectCircle), "SetPlayer")]
