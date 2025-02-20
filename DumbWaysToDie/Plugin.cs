@@ -30,6 +30,8 @@ public class Plugin : BaseUnityPlugin
 
         AssetsPath = assetsPath;
 
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+
         Assets.Add(CauseOfDeath.Age, LoadTexture("Age.png"));
         Assets.Add(CauseOfDeath.AloneInSpace, LoadTexture("AloneInSpace.png"));
         Assets.Add(CauseOfDeath.Arrowed, LoadTexture("Arrowed.png"));
@@ -49,7 +51,9 @@ public class Plugin : BaseUnityPlugin
         Assets.Add(CauseOfDeath.Rocked, LoadTexture("Rocked.png"));
         Assets.Add(CauseOfDeath.Rolled, LoadTexture("Rolled.png"));
 
-        Logger.LogInfo($"Plugin Dumb Ways to Die is loaded!");
+        watch.Stop();
+
+        Logger.LogInfo($"Plugin Dumb Ways to Die is loaded in {watch.ElapsedMilliseconds} ms!");
 
         Harmony harmony = new("lofen.dumbWaysToDie");
         harmony.PatchAll(typeof(Patch));
@@ -74,7 +78,7 @@ public class Plugin : BaseUnityPlugin
 
         watch.Stop();
 
-        Logger.LogInfo($"Loaded texture '{newTex.name}' in {watch.ElapsedMilliseconds} ms");
+        Logger.LogDebug($"Loaded texture '{newTex.name}' in {watch.ElapsedMilliseconds} ms");
 
         return newTex;
     }
