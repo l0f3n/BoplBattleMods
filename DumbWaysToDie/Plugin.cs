@@ -165,7 +165,7 @@ public class Patch
 
         watch.Stop();
 
-        Plugin.Logger.LogInfo($"Setting sprite '{tex.name}' for player {id} in {watch.ElapsedMilliseconds} ms");
+        Plugin.Logger.LogInfo($"Set alternate sprite '{tex.name}' for player {id} in {watch.ElapsedMilliseconds} ms");
     }
 
     static private void SetCauseOfDeath(int id, CauseOfDeath causeOfDeath, bool overrideOriginal = false)
