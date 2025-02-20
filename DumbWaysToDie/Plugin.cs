@@ -181,6 +181,13 @@ public class Patch
         if (p.CauseOfDeath != global::CauseOfDeath.Other && !overrideOriginal)
             return;
 
+        if (p.IsAlive)
+        {
+            // This someimes triggers if we have clones or revives
+            Plugin.Logger.LogDebug($"Refusing to set cause of death {causeOfDeath} for player {id}, not dead yet");
+            return;
+        }
+
         Plugin.Logger.LogDebug($"Setting cause of death {causeOfDeath} for player {id}");
 
         CausesOfDeath[id] = causeOfDeath;
