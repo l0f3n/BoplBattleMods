@@ -32,6 +32,7 @@ public class Plugin : BaseUnityPlugin
 
         Assets.Add(CauseOfDeath.Age, LoadTexture("Age.png"));
         Assets.Add(CauseOfDeath.AloneInSpace, LoadTexture("AloneInSpace.png"));
+        Assets.Add(CauseOfDeath.Arrowed, LoadTexture("Arrowed.png"));
         Assets.Add(CauseOfDeath.BlackHole, LoadTexture("BlackHole.jpg"));
         Assets.Add(CauseOfDeath.Clouds, LoadTexture("Clouds.png"));
         Assets.Add(CauseOfDeath.Drilled, LoadTexture("Drilled.png"));
@@ -44,7 +45,6 @@ public class Plugin : BaseUnityPlugin
         Assets.Add(CauseOfDeath.Leashed, LoadTexture("Leashed.png"));
         Assets.Add(CauseOfDeath.Macho, LoadTexture("Macho.png"));
         Assets.Add(CauseOfDeath.Meditating, LoadTexture("Meditating.png"));
-        Assets.Add(CauseOfDeath.PiercedByArrow, LoadTexture("PiercedByArrow.png"));
         Assets.Add(CauseOfDeath.PiercedBySword, LoadTexture("PiercedBySword.png"));
         Assets.Add(CauseOfDeath.Rocked, LoadTexture("Rocked.png"));
         Assets.Add(CauseOfDeath.Rolled, LoadTexture("Rolled.png"));
@@ -84,6 +84,7 @@ public enum CauseOfDeath
 {
     Age,
     AloneInSpace,
+    Arrowed,
     BlackHole,
     Clouds,
     Drilled,
@@ -97,7 +98,6 @@ public enum CauseOfDeath
     Macho,
     Meditating,
     Other,
-    PiercedByArrow,
     PiercedBySword,
     Rocked,
     Rolled,
@@ -298,7 +298,7 @@ public class Patch
         }
         else if (go.layer == LayerMask.NameToLayer("Projectile") && t.CompareTag("projectile"))
         {
-            causeOfDeath = CauseOfDeath.PiercedByArrow;
+            causeOfDeath = CauseOfDeath.Arrowed;
         }
         else if (go.layer == LayerMask.NameToLayer("LethalTerrain") && t.CompareTag("explosion"))
         {
