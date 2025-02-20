@@ -176,10 +176,13 @@ public class Patch
             return;
         }
 
-        // Player has a standard cause of death, ignore our special ones
         Player p = PlayerHandler.Get().GetPlayer(id);
+
         if (p.CauseOfDeath != global::CauseOfDeath.Other && !overrideOriginal)
+        {
+            Plugin.Logger.LogDebug($"Not setting cause of death {causeOfDeath} for player {id}, already has standard cause of death {p.CauseOfDeath}");
             return;
+        }
 
         if (p.IsAlive)
         {
