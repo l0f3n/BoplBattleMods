@@ -111,24 +111,6 @@ public class Patch
     public static Dictionary<int, bool> IsDrilling = new Dictionary<int, bool>();
     public static Dictionary<int, bool> IsMeditating = new Dictionary<int, bool>();
 
-    /*public static Color RawKillerColor = new Color(0, 0, 1);*/
-    /**/
-    /*static private Texture2D Recolor(Texture2D tex, Color oldColor, Color newColor)*/
-    /*{*/
-    /*    Texture2D newTex = new Texture2D(tex.width, tex.height, tex.format, true);*/
-    /*    newTex.name = tex.name;*/
-    /*    newTex.filterMode = tex.filterMode;*/
-    /*    Color[] pixels = tex.GetPixels();*/
-    /*    for (int i = 0; i < pixels.Length; i++)*/
-    /*    {*/
-    /*        if (pixels[i] == oldColor)*/
-    /*            pixels[i] = newColor;*/
-    /*    }*/
-    /*    newTex.SetPixels(pixels);*/
-    /*    newTex.Apply();*/
-    /*    return newTex;*/
-    /*}*/
-
     static private void TrySetAlternateSprite(int id)
     {
         if (!CausesOfDeath.ContainsKey(id))
