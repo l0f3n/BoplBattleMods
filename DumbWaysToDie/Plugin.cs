@@ -133,13 +133,13 @@ public class Patch
     {
         if (!CausesOfDeath.ContainsKey(id))
         {
-            Plugin.Logger.LogDebug($"No cause of death for player {id} yet");
+            Plugin.Logger.LogDebug($"Not setting alternate sprite, no cause of death for player {id} yet");
             return;
         }
 
         if (!AbilitySelectCircles.ContainsKey(id))
         {
-            Plugin.Logger.LogDebug($"No ability select for player {id} yet");
+            Plugin.Logger.LogDebug($"Not setting alternate sprite, no ability select for player {id} yet");
             return;
         }
 
@@ -165,14 +165,14 @@ public class Patch
 
         watch.Stop();
 
-        Plugin.Logger.LogInfo($"Set sprite '{tex.name}' for player {id} in {watch.ElapsedMilliseconds} ms");
+        Plugin.Logger.LogInfo($"Setting sprite '{tex.name}' for player {id} in {watch.ElapsedMilliseconds} ms");
     }
 
     static private void SetCauseOfDeath(int id, CauseOfDeath causeOfDeath, bool overrideOriginal = false)
     {
         if (GameSessionHandler.HasGameEnded())
         {
-            Plugin.Logger.LogDebug($"Refusing to set cause of death {causeOfDeath} for player {id}, game is over");
+            Plugin.Logger.LogDebug($"Not setting cause of death {causeOfDeath} for player {id}, game is over");
             return;
         }
 
@@ -184,7 +184,7 @@ public class Patch
         if (p.IsAlive)
         {
             // This someimes triggers if we have clones or revives
-            Plugin.Logger.LogDebug($"Refusing to set cause of death {causeOfDeath} for player {id}, not dead yet");
+            Plugin.Logger.LogDebug($"Not settings cause of death {causeOfDeath} for player {id}, not actually dead yet");
             return;
         }
 
