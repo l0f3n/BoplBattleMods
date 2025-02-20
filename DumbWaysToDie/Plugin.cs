@@ -270,10 +270,6 @@ public class Patch
         FixTransform t = collision.colliderPP.fixTrans;
         GameObject go = t.gameObject;
 
-        /*FileLog.Log($"Player {id} died:");*/
-        /*FileLog.Log($"  Layer: {LayerMask.LayerToName(go.layer)}");*/
-        /*FileLog.Log($"  Tag: {t.tag}");*/
-
         CauseOfDeath causeOfDeath = CauseOfDeath.Other;
         bool overrideOriginal = false;
 
@@ -290,7 +286,10 @@ public class Patch
             }
             else if (t.CompareTag("explosion"))
             {
-                causeOfDeath = CauseOfDeath.Drilled;
+                if (go.ToString().Contains("invisibleHitbox"))
+                {
+                    causeOfDeath = CauseOfDeath.Drilled;
+                }
             }
             else
             {
@@ -354,8 +353,6 @@ public class Patch
             return;
 
         int id = c.GetPlayerId();
-
-        /*FileLog.Log($"Player {id} outside bounds!");*/
 
         CauseOfDeath causeOfDeath = CauseOfDeath.Other;
 
