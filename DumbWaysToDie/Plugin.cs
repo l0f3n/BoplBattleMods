@@ -347,7 +347,11 @@ public class Patch
 
         CauseOfDeath causeOfDeath = CauseOfDeath.Other;
 
-        if (Constants.leveltype != LevelType.space && ___fixTrans.position.y < SceneBounds.WaterHeight)
+        if (__state != CauseOfDeath.Other)
+        {
+            causeOfDeath = __state;
+        }
+        else if (Constants.leveltype != LevelType.space && ___fixTrans.position.y < SceneBounds.WaterHeight)
         {
             if (Constants.leveltype == LevelType.snow)
             {
@@ -357,10 +361,6 @@ public class Patch
             {
                 causeOfDeath = CauseOfDeath.Drowned;
             }
-        }
-        else if (__state != CauseOfDeath.Other)
-        {
-            causeOfDeath = __state;
         }
         else
         {
