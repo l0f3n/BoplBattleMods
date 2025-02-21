@@ -49,6 +49,7 @@ public class Plugin : BaseUnityPlugin
         Assets.Add(CauseOfDeath.Meditating, LoadTexture("Meditating.png"));
         Assets.Add(CauseOfDeath.PiercedBySword, LoadTexture("PiercedBySword.png"));
         Assets.Add(CauseOfDeath.Rocked, LoadTexture("Rocked.png"));
+        Assets.Add(CauseOfDeath.Rocking, LoadTexture("Rocking.png"));
         Assets.Add(CauseOfDeath.Rolled, LoadTexture("Rolled.png"));
 
         watch.Stop();
@@ -104,6 +105,7 @@ public enum CauseOfDeath
     Other,
     PiercedBySword,
     Rocked,
+    Rocking,
     Rolled,
 }
 
@@ -112,6 +114,7 @@ public class Patch
 {
     public static Dictionary<int, CauseOfDeath> CausesOfDeath = new Dictionary<int, CauseOfDeath>();
     public static Dictionary<int, AbilitySelectCircle> AbilitySelectCircles = new Dictionary<int, AbilitySelectCircle>();
+    public static Dictionary<int, bool> IsRocking = new Dictionary<int, bool>();
     public static Dictionary<int, bool> IsDrilling = new Dictionary<int, bool>();
     public static Dictionary<int, bool> IsMeditating = new Dictionary<int, bool>();
 
@@ -189,6 +192,7 @@ public class Patch
         CauseOfDeath causeOfDeath = CauseOfDeath.Other;
 
         Player player = PlayerHandler.Get().GetPlayer(id);
+        IsRocking.TryGetValue(player.Id, out bool isRocking);
         IsMeditating.TryGetValue(player.Id, out bool isMeditating);
         IsDrilling.TryGetValue(player.Id, out bool isDrilling);
 
@@ -207,6 +211,10 @@ public class Patch
         else if (player.InMachoThrow)
         {
             causeOfDeath = CauseOfDeath.Macho;
+        }
+        else if (isRocking)
+        {
+            causeOfDeath = CauseOfDeath.Rocking;
         }
         else if (isMeditating)
         {
@@ -227,6 +235,7 @@ public class Patch
         Plugin.Logger.LogDebug("Resetting...");
         CausesOfDeath.Clear();
         AbilitySelectCircles.Clear();
+        IsRocking.Clear();
         IsDrilling.Clear();
         IsMeditating.Clear();
     }
@@ -314,20 +323,22 @@ public class Patch
     public static void SelfDestructPre(DestroyIfOutsideSceneBounds __instance, ref CauseOfDeath __state)
     {
         __state = CauseOfDeath.Other;
+        PlayerBody body = null;
 
         if (__instance.gameObject.layer != LayerMask.NameToLayer("Player"))
             return;
 
         PlayerCollision pc = __instance.GetComponent<PlayerCollision>();
-        if (pc == null)
-            return;
+        if (pc != null)
+        {
+            body = (PlayerBody)Traverse.Create(pc).Field("body").GetValue();
+        }
 
         IPlayerIdHolder c = __instance.GetComponent<IPlayerIdHolder>();
         if (c == null)
             return;
 
         int id = c.GetPlayerId();
-        PlayerBody body = (PlayerBody)Traverse.Create(pc).Field("body").GetValue();
 
         __state = DetermineStateBeforeDeath(id, body);
     }
@@ -393,6 +404,20 @@ public class Patch
             return;
 
         SetCauseOfDeath(idh.GetPlayerId(), CauseOfDeath.BlackHole);
+    }
+
+    [HarmonyPatch(typeof(BounceBall), nameof(BounceBall.OnEnterAbility))]
+    [HarmonyPostfix]
+    public static void BounceBallOnEnterPost(ref PlayerInfo ___playerInfo)
+    {
+        IsRocking[___playerInfo.playerId] = true;
+    }
+
+    [HarmonyPatch(typeof(BounceBall), nameof(BounceBall.ExitAbility), new Type[] { typeof(AbilityExitInfo) })]
+    [HarmonyPostfix]
+    public static void BounceBallExitPost(ref PlayerInfo ___playerInfo)
+    {
+        IsRocking[___playerInfo.playerId] = false;
     }
 
     [HarmonyPatch(typeof(CastSpell), nameof(CastSpell.OnEnterAbility))]
