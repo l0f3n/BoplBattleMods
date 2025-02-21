@@ -1,6 +1,6 @@
 # Bopl Battle Mods
 
-A repository containing all my mods for [Bopl Battle](https://store.steampowered.com/app/1686940/Bopl_Battle/).
+A repository containing my mods for [Bopl Battle](https://store.steampowered.com/app/1686940/Bopl_Battle/).
 
 ## Mods
 
