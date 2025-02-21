@@ -187,7 +187,7 @@ public class Patch
         TrySetAlternateSprite(id);
     }
 
-    static private CauseOfDeath DetermineStateBeforeDeath(int id, PlayerBody body)
+    static private CauseOfDeath DetermineStateBeforeDeath(int id, bool isLeashed)
     {
         CauseOfDeath causeOfDeath = CauseOfDeath.Other;
 
@@ -204,7 +204,7 @@ public class Patch
         {
             causeOfDeath = CauseOfDeath.Invisible;
         }
-        else if (body != null && body.ropeBody != null)
+        else if (isLeashed)
         {
             causeOfDeath = CauseOfDeath.Leashed;
         }
@@ -253,7 +253,8 @@ public class Patch
     [HarmonyPrefix]
     public static void KillPlayerPre(ref CauseOfDeath __state, PlayerBody ___body, IPlayerIdHolder ___playerIdHolder)
     {
-        __state = DetermineStateBeforeDeath(___playerIdHolder.GetPlayerId(), ___body);
+        bool isLeashed = ___body.ropeBody != null;
+        __state = DetermineStateBeforeDeath(___playerIdHolder.GetPlayerId(), isLeashed);
     }
 
     [HarmonyPatch(typeof(PlayerCollision), "KillPlayerOnCollision")]
@@ -323,7 +324,7 @@ public class Patch
     public static void SelfDestructPre(DestroyIfOutsideSceneBounds __instance, ref CauseOfDeath __state)
     {
         __state = CauseOfDeath.Other;
-        PlayerBody body = null;
+        bool isLeashed = false;
 
         if (__instance.gameObject.layer != LayerMask.NameToLayer("Player"))
             return;
@@ -331,7 +332,14 @@ public class Patch
         PlayerCollision pc = __instance.GetComponent<PlayerCollision>();
         if (pc != null)
         {
-            body = (PlayerBody)Traverse.Create(pc).Field("body").GetValue();
+            PlayerBody body = (PlayerBody)Traverse.Create(pc).Field("body").GetValue();
+            isLeashed = body.ropeBody != null;
+        }
+
+        BounceBall bb = __instance.GetComponent<BounceBall>();
+        if (bb != null)
+        {
+            isLeashed = bb.ropeBody != null;
         }
 
         IPlayerIdHolder c = __instance.GetComponent<IPlayerIdHolder>();
@@ -340,7 +348,7 @@ public class Patch
 
         int id = c.GetPlayerId();
 
-        __state = DetermineStateBeforeDeath(id, body);
+        __state = DetermineStateBeforeDeath(id, isLeashed);
     }
 
     [HarmonyPatch(typeof(DestroyIfOutsideSceneBounds), "selfDestruct")]
