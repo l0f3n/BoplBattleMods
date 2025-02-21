@@ -161,6 +161,7 @@ public class Patch
     {
         if (GameSessionHandler.HasGameEnded())
         {
+            // Bopls are sometimes randomly killed after the games ends
             Plugin.Logger.LogDebug($"Not setting cause of death {causeOfDeath} for player {id}, game is over");
             return;
         }
