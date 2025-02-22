@@ -13,7 +13,7 @@ public class Plugin : BaseUnityPlugin
 {
     internal static new ManualLogSource Logger;
 
-    public static Dictionary<CauseOfDeath, Texture2D> Assets = new Dictionary<CauseOfDeath, Texture2D>();
+    public static Dictionary<CauseOfDeath, Sprite> Assets = new Dictionary<CauseOfDeath, Sprite>();
     public static string AssetsPath;
 
     private void Awake()
@@ -32,25 +32,25 @@ public class Plugin : BaseUnityPlugin
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
-        Assets.Add(CauseOfDeath.Age, LoadTexture("Age.png"));
-        Assets.Add(CauseOfDeath.AloneInSpace, LoadTexture("AloneInSpace.png"));
-        Assets.Add(CauseOfDeath.Arrowed, LoadTexture("Arrowed.png"));
-        Assets.Add(CauseOfDeath.BlackHole, LoadTexture("BlackHole.jpg"));
-        Assets.Add(CauseOfDeath.Clouds, LoadTexture("Clouds.png"));
-        Assets.Add(CauseOfDeath.Drilled, LoadTexture("Drilled.png"));
-        Assets.Add(CauseOfDeath.Drilling, LoadTexture("Drilling.png"));
-        Assets.Add(CauseOfDeath.Drowned, LoadTexture("Drowned.png"));
-        Assets.Add(CauseOfDeath.Electrocuted, LoadTexture("Electrocuted.png"));
-        Assets.Add(CauseOfDeath.Exploded, LoadTexture("Exploded.png"));
-        Assets.Add(CauseOfDeath.Froze, LoadTexture("Froze.png"));
-        Assets.Add(CauseOfDeath.Invisible, LoadTexture("Invisible.png"));
-        Assets.Add(CauseOfDeath.Leashed, LoadTexture("Leashed.png"));
-        Assets.Add(CauseOfDeath.Macho, LoadTexture("Macho.png"));
-        Assets.Add(CauseOfDeath.Meditating, LoadTexture("Meditating.png"));
-        Assets.Add(CauseOfDeath.PiercedBySword, LoadTexture("PiercedBySword.png"));
-        Assets.Add(CauseOfDeath.Rocked, LoadTexture("Rocked.png"));
-        Assets.Add(CauseOfDeath.Rocking, LoadTexture("Rocking.png"));
-        Assets.Add(CauseOfDeath.Rolled, LoadTexture("Rolled.png"));
+        Assets.Add(CauseOfDeath.Age, LoadSprite("Age.png"));
+        Assets.Add(CauseOfDeath.AloneInSpace, LoadSprite("AloneInSpace.png"));
+        Assets.Add(CauseOfDeath.Arrowed, LoadSprite("Arrowed.png"));
+        Assets.Add(CauseOfDeath.BlackHole, LoadSprite("BlackHole.jpg"));
+        Assets.Add(CauseOfDeath.Clouds, LoadSprite("Clouds.png"));
+        Assets.Add(CauseOfDeath.Drilled, LoadSprite("Drilled.png"));
+        Assets.Add(CauseOfDeath.Drilling, LoadSprite("Drilling.png"));
+        Assets.Add(CauseOfDeath.Drowned, LoadSprite("Drowned.png"));
+        Assets.Add(CauseOfDeath.Electrocuted, LoadSprite("Electrocuted.png"));
+        Assets.Add(CauseOfDeath.Exploded, LoadSprite("Exploded.png"));
+        Assets.Add(CauseOfDeath.Froze, LoadSprite("Froze.png"));
+        Assets.Add(CauseOfDeath.Invisible, LoadSprite("Invisible.png"));
+        Assets.Add(CauseOfDeath.Leashed, LoadSprite("Leashed.png"));
+        Assets.Add(CauseOfDeath.Macho, LoadSprite("Macho.png"));
+        Assets.Add(CauseOfDeath.Meditating, LoadSprite("Meditating.png"));
+        Assets.Add(CauseOfDeath.PiercedBySword, LoadSprite("PiercedBySword.png"));
+        Assets.Add(CauseOfDeath.Rocked, LoadSprite("Rocked.png"));
+        Assets.Add(CauseOfDeath.Rocking, LoadSprite("Rocking.png"));
+        Assets.Add(CauseOfDeath.Rolled, LoadSprite("Rolled.png"));
 
         watch.Stop();
 
@@ -60,7 +60,7 @@ public class Plugin : BaseUnityPlugin
         harmony.PatchAll(typeof(Patch));
     }
 
-    static private Texture2D LoadTexture(string name)
+    static private Sprite LoadSprite(string name)
     {
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -77,11 +77,13 @@ public class Plugin : BaseUnityPlugin
         newTex.SetPixels(tex.GetPixels());
         newTex.Apply();
 
+        Sprite sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 60);
+
         watch.Stop();
 
-        Logger.LogDebug($"Loaded texture '{newTex.name}' in {watch.ElapsedMilliseconds} ms");
+        Logger.LogDebug($"Loaded sprite '{name}' in {watch.ElapsedMilliseconds} ms");
 
-        return newTex;
+        return sprite;
     }
 }
 
@@ -142,19 +144,12 @@ public class Patch
             return;
         }
 
-        var watch = System.Diagnostics.Stopwatch.StartNew();
+        Plugin.Logger.LogInfo($"Setting alternate sprite {causeOfDeath} for player {id}");
 
-        Texture2D tex = Plugin.Assets[causeOfDeath];
-        Sprite sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 60);
-
-        AbilitySelectCircles[id].SetCharacterSprite(sprite);
+        AbilitySelectCircles[id].SetCharacterSprite(Plugin.Assets[causeOfDeath]);
 
         CausesOfDeath.Remove(id);
         AbilitySelectCircles.Remove(id);
-
-        watch.Stop();
-
-        Plugin.Logger.LogInfo($"Set alternate sprite {causeOfDeath} for player {id} in {watch.ElapsedMilliseconds} ms");
     }
 
     static private void SetCauseOfDeath(int id, CauseOfDeath causeOfDeath, bool overrideOriginal = false)
