@@ -89,6 +89,7 @@ public class Plugin : BaseUnityPlugin
 
 public enum CauseOfDeath
 {
+    Other,
     AloneInSpace,
     Arrowed,
     BlackHoled,
@@ -104,7 +105,6 @@ public enum CauseOfDeath
     Leashed,
     Macho,
     Meditating,
-    Other,
     Sworded,
     Rocked,
     Rocking,
