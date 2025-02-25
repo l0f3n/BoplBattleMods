@@ -32,10 +32,10 @@ public class Plugin : BaseUnityPlugin
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
-        Assets.Add(CauseOfDeath.Age, LoadSprite("Age.png"));
         Assets.Add(CauseOfDeath.AloneInSpace, LoadSprite("AloneInSpace.png"));
         Assets.Add(CauseOfDeath.Arrowed, LoadSprite("Arrowed.png"));
-        Assets.Add(CauseOfDeath.BlackHole, LoadSprite("BlackHole.jpg"));
+        Assets.Add(CauseOfDeath.BlackHoled, LoadSprite("BlackHoled.png"));
+        Assets.Add(CauseOfDeath.Buddha, LoadSprite("Buddha.png"));
         Assets.Add(CauseOfDeath.Clouds, LoadSprite("Clouds.png"));
         Assets.Add(CauseOfDeath.Drilled, LoadSprite("Drilled.png"));
         Assets.Add(CauseOfDeath.Drilling, LoadSprite("Drilling.png"));
@@ -47,7 +47,7 @@ public class Plugin : BaseUnityPlugin
         Assets.Add(CauseOfDeath.Leashed, LoadSprite("Leashed.png"));
         Assets.Add(CauseOfDeath.Macho, LoadSprite("Macho.png"));
         Assets.Add(CauseOfDeath.Meditating, LoadSprite("Meditating.png"));
-        Assets.Add(CauseOfDeath.PiercedBySword, LoadSprite("PiercedBySword.png"));
+        Assets.Add(CauseOfDeath.Sworded, LoadSprite("Sworded.png"));
         Assets.Add(CauseOfDeath.Rocked, LoadSprite("Rocked.png"));
         Assets.Add(CauseOfDeath.Rocking, LoadSprite("Rocking.png"));
         Assets.Add(CauseOfDeath.Rolled, LoadSprite("Rolled.png"));
@@ -89,10 +89,10 @@ public class Plugin : BaseUnityPlugin
 
 public enum CauseOfDeath
 {
-    Age,
     AloneInSpace,
     Arrowed,
-    BlackHole,
+    BlackHoled,
+    Buddha,
     Clouds,
     Drilled,
     Drilling,
@@ -105,7 +105,7 @@ public enum CauseOfDeath
     Macho,
     Meditating,
     Other,
-    PiercedBySword,
+    Sworded,
     Rocked,
     Rocking,
     Rolled,
@@ -194,7 +194,7 @@ public class Patch
 
         if (GameTime.IsTimeStopped() && player.isProtectedFromTimeStop)
         {
-            causeOfDeath = CauseOfDeath.Age;
+            causeOfDeath = CauseOfDeath.Buddha;
         }
         else if (player.isInvisible)
         {
@@ -297,7 +297,7 @@ public class Patch
         }
         else if (go.layer == LayerMask.NameToLayer("LethalTerrain") && t.CompareTag("explosion"))
         {
-            causeOfDeath = CauseOfDeath.PiercedBySword;
+            causeOfDeath = CauseOfDeath.Sworded;
         }
         else if (go.layer == LayerMask.NameToLayer("Player") && t.CompareTag("Ability"))
         {
@@ -407,7 +407,7 @@ public class Patch
         if (idh == null)
             return;
 
-        SetCauseOfDeath(idh.GetPlayerId(), CauseOfDeath.BlackHole);
+        SetCauseOfDeath(idh.GetPlayerId(), CauseOfDeath.BlackHoled);
     }
 
     [HarmonyPatch(typeof(BounceBall), nameof(BounceBall.OnEnterAbility))]
