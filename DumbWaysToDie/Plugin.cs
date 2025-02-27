@@ -14,7 +14,6 @@ namespace DumbWaysToDie;
 public enum CauseOfDeath
 {
     Other,
-    AloneInSpace,
     Arrowed,
     BlackHole,
     Buddha,
@@ -29,10 +28,11 @@ public enum CauseOfDeath
     Leashed,
     Macho,
     Meditating,
-    Sworded,
     Rocked,
     Rocking,
     Rolled,
+    Space,
+    Sworded,
 }
 
 [BepInPlugin("lofen.dumbWaysToDie", "Dumb Ways to Die", "1.0.0")]
@@ -64,15 +64,13 @@ public class Plugin : BaseUnityPlugin
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
-        Assets.Add(CauseOfDeath.AloneInSpace, LoadSprite("AloneInSpace.png"));
-        Assets.Add(CauseOfDeath.Buddha, LoadSprite("Buddha.png"));
-
         Assets.Add(CauseOfDeath.Rocking, LoadSprite("Rocking.png"));
 
         // TODO: Convert all to the new order
 
         AddDeathSpriteCreator(CauseOfDeath.Arrowed);
         AddDeathSpriteCreator(CauseOfDeath.BlackHole);
+        AddDeathSpriteCreator(CauseOfDeath.Buddha);
         AddDeathSpriteCreator(CauseOfDeath.Clouds);
         AddDeathSpriteCreator(CauseOfDeath.Drilled);
         AddDeathSpriteCreator(CauseOfDeath.Drilling);
@@ -87,6 +85,7 @@ public class Plugin : BaseUnityPlugin
         AddDeathSpriteCreator(CauseOfDeath.Rocked);
         AddDeathSpriteCreator(CauseOfDeath.Rolled);
         AddDeathSpriteCreator(CauseOfDeath.Sworded);
+        AddDeathSpriteCreator(CauseOfDeath.Space);
 
         watch.Stop();
 
@@ -538,7 +537,7 @@ public class Patch
             }
             else
             {
-                causeOfDeath = CauseOfDeath.AloneInSpace;
+                causeOfDeath = CauseOfDeath.Space;
             }
         }
 
