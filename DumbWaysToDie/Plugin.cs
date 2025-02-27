@@ -1,24 +1,56 @@
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace DumbWaysToDie;
+
+public enum CauseOfDeath
+{
+    Other,
+    AloneInSpace,
+    Arrowed,
+    BlackHole,
+    Buddha,
+    Clouds,
+    Drilled,
+    Drilling,
+    Drowned,
+    Electrocuted,
+    Exploded,
+    Froze,
+    Invisible,
+    Leashed,
+    Macho,
+    Meditating,
+    Sworded,
+    Rocked,
+    Rocking,
+    Rolled,
+}
 
 [BepInPlugin("lofen.dumbWaysToDie", "Dumb Ways to Die", "1.0.0")]
 public class Plugin : BaseUnityPlugin
 {
     internal static new ManualLogSource Logger;
 
+    internal static ConfigEntry<bool> Debug;
+
     public static Dictionary<CauseOfDeath, Sprite> Assets = new Dictionary<CauseOfDeath, Sprite>();
+    public static Dictionary<CauseOfDeath, DeathSpriteCreator> NewAssets = new Dictionary<CauseOfDeath, DeathSpriteCreator>();
     public static string AssetsPath;
 
     private void Awake()
     {
         Logger = base.Logger;
+
+        Debug = Config.Bind("General", "Debug mode", false, "Always reload textures from files.");
 
         string basePath = Path.GetDirectoryName(((BaseUnityPlugin)this).Info.Location);
         string assetsPath = Path.Combine(basePath, "Assets");
@@ -33,41 +65,55 @@ public class Plugin : BaseUnityPlugin
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
         Assets.Add(CauseOfDeath.AloneInSpace, LoadSprite("AloneInSpace.png"));
-        Assets.Add(CauseOfDeath.Arrowed, LoadSprite("Arrowed.png"));
-        Assets.Add(CauseOfDeath.BlackHoled, LoadSprite("BlackHoled.png"));
         Assets.Add(CauseOfDeath.Buddha, LoadSprite("Buddha.png"));
-        Assets.Add(CauseOfDeath.Clouds, LoadSprite("Clouds.png"));
-        Assets.Add(CauseOfDeath.Drilled, LoadSprite("Drilled.png"));
-        Assets.Add(CauseOfDeath.Drilling, LoadSprite("Drilling.png"));
-        Assets.Add(CauseOfDeath.Drowned, LoadSprite("Drowned.png"));
-        Assets.Add(CauseOfDeath.Electrocuted, LoadSprite("Electrocuted.png"));
-        Assets.Add(CauseOfDeath.Exploded, LoadSprite("Exploded.png"));
-        Assets.Add(CauseOfDeath.Froze, LoadSprite("Froze.png"));
-        Assets.Add(CauseOfDeath.Invisible, LoadSprite("Invisible.png"));
-        Assets.Add(CauseOfDeath.Leashed, LoadSprite("Leashed.png"));
-        Assets.Add(CauseOfDeath.Macho, LoadSprite("Macho.png"));
-        Assets.Add(CauseOfDeath.Meditating, LoadSprite("Meditating.png"));
-        Assets.Add(CauseOfDeath.Sworded, LoadSprite("Sworded.png"));
-        Assets.Add(CauseOfDeath.Rocked, LoadSprite("Rocked.png"));
+
         Assets.Add(CauseOfDeath.Rocking, LoadSprite("Rocking.png"));
-        Assets.Add(CauseOfDeath.Rolled, LoadSprite("Rolled.png"));
+
+        // TODO: Convert all to the new order
+
+        AddDeathSpriteCreator(CauseOfDeath.Arrowed);
+        AddDeathSpriteCreator(CauseOfDeath.BlackHole);
+        AddDeathSpriteCreator(CauseOfDeath.Clouds);
+        AddDeathSpriteCreator(CauseOfDeath.Drilled);
+        AddDeathSpriteCreator(CauseOfDeath.Drilling);
+        AddDeathSpriteCreator(CauseOfDeath.Drowned);
+        AddDeathSpriteCreator(CauseOfDeath.Electrocuted);
+        AddDeathSpriteCreator(CauseOfDeath.Exploded);
+        AddDeathSpriteCreator(CauseOfDeath.Froze);
+        AddDeathSpriteCreator(CauseOfDeath.Invisible);
+        AddDeathSpriteCreator(CauseOfDeath.Leashed);
+        AddDeathSpriteCreator(CauseOfDeath.Macho);
+        AddDeathSpriteCreator(CauseOfDeath.Meditating);
+        AddDeathSpriteCreator(CauseOfDeath.Rocked);
+        AddDeathSpriteCreator(CauseOfDeath.Rolled);
+        AddDeathSpriteCreator(CauseOfDeath.Sworded);
 
         watch.Stop();
 
-        Logger.LogInfo($"Plugin Dumb Ways to Die is loaded in {watch.ElapsedMilliseconds} ms!");
+        Logger.LogInfo($"Plugin Dumb Ways to Die was loaded in {watch.ElapsedMilliseconds} ms!");
 
         Harmony harmony = new("lofen.dumbWaysToDie");
         harmony.PatchAll(typeof(Patch));
     }
 
+    static private void AddDeathSpriteCreator(CauseOfDeath causeOfDeath)
+    {
+        NewAssets.Add(causeOfDeath, new DeathSpriteCreator(causeOfDeath.ToString()));
+    }
+
+    // TODO: delete when its not used anymore
     static private Sprite LoadSprite(string name)
     {
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
         string path = Path.Combine(AssetsPath, name);
-        byte[] bytes = File.ReadAllBytes(path);
 
         Texture2D tex = new Texture2D(2, 2);
+
+        if (!File.Exists(path))
+            return null;
+
+        byte[] bytes = File.ReadAllBytes(path);
         ImageConversion.LoadImage(tex, bytes);
 
         // Doing all of this is probably useless, but im too lazy to delete it
@@ -87,28 +133,110 @@ public class Plugin : BaseUnityPlugin
     }
 }
 
-public enum CauseOfDeath
+public class DeathSpriteCreator
 {
-    Other,
-    AloneInSpace,
-    Arrowed,
-    BlackHoled,
-    Buddha,
-    Clouds,
-    Drilled,
-    Drilling,
-    Drowned,
-    Electrocuted,
-    Exploded,
-    Froze,
-    Invisible,
-    Leashed,
-    Macho,
-    Meditating,
-    Sworded,
-    Rocked,
-    Rocking,
-    Rolled,
+    private string name;
+
+    private Texture2D backgroundTex;
+
+    private Color[] vpxs;
+    private Color[] kpxs;
+
+    private static int WIDTH = 400;
+    private static float MAX_BRIGHTNESS = Color.green.grayscale;
+
+    public DeathSpriteCreator(string name)
+    {
+        this.name = name;
+        LoadAllTextures();
+    }
+
+    private void LoadAllTextures()
+    {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+
+        // TODO: remove background, we dont need to support it
+        backgroundTex = LoadTexture($"{name}-background");
+        vpxs = LoadPixels($"{name}");
+        kpxs = LoadPixels($"{name}-Killer");
+
+        watch.Stop();
+        Plugin.Logger.LogDebug($"Loaded textures for {name} in {watch.ElapsedMilliseconds} ms");
+    }
+
+    private static Color[] LoadPixels(string name)
+    {
+        Texture2D tex = LoadTexture(name);
+        return tex?.GetPixels() ?? new Color[WIDTH * WIDTH];
+    }
+
+    private static Texture2D LoadTexture(string name)
+    {
+        string path = Path.Combine(Plugin.AssetsPath, $"{name}.png");
+
+        if (!File.Exists(path))
+            return null;
+
+        byte[] bytes = File.ReadAllBytes(path);
+        Texture2D tex = new Texture2D(2, 2);
+        ImageConversion.LoadImage(tex, bytes);
+
+        if (tex.width != WIDTH || tex.height != WIDTH)
+        {
+            Plugin.Logger.LogWarning($"Texture {path} has wrong dimensions {tex.width}x{tex.height}");
+        }
+
+        // Doing all of this is probably useless, but im too lazy to delete it
+        Texture2D newTex = new Texture2D(tex.width, tex.height, TextureFormat.RGBA32, true);
+        newTex.name = name;
+        newTex.filterMode = FilterMode.Bilinear;
+        newTex.SetPixels(tex.GetPixels());
+
+        return newTex;
+    }
+
+    private static bool IsGreen(Color c)
+    {
+        return c.g > c.r && c.g > c.b;
+    }
+
+    public Sprite Create(Color victimColor, Color? maybeKillerColor)
+    {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+
+        Texture2D tex = new Texture2D(WIDTH, WIDTH, TextureFormat.RGBA32, true);
+        tex.name = name;
+        tex.filterMode = FilterMode.Bilinear;
+
+        if (Plugin.Debug.Value)
+        {
+            LoadAllTextures();
+        }
+
+        Color killerColor = maybeKillerColor ?? new Color(1, 1, 1, 1);
+
+        Color[] bpxs = backgroundTex?.GetPixels() ?? new Color[WIDTH * WIDTH];
+
+        Parallel.For(0, bpxs.Length, i =>
+        {
+            if (vpxs[i].a == 0 && kpxs[i].a == 0)
+                return;
+
+            Color v = IsGreen(vpxs[i]) ? Color.Lerp(Color.clear, victimColor, vpxs[i].grayscale / MAX_BRIGHTNESS) : vpxs[i];
+            Color k = IsGreen(kpxs[i]) ? Color.Lerp(Color.clear, killerColor, kpxs[i].grayscale / MAX_BRIGHTNESS) : kpxs[i];
+            bpxs[i] = Color.Lerp(v, k, (k.a / (v.a + k.a)));
+        });
+
+        tex.SetPixels(bpxs);
+        tex.Apply();
+
+        // FullRect for performance: https://discussions.unity.com/t/any-way-to-speed-up-sprite-create/700273/12
+        Sprite sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 60, 0, SpriteMeshType.FullRect);
+
+        Plugin.Logger.LogDebug($"Created sprite {name} in {watch.ElapsedMilliseconds} ms");
+
+        return sprite;
+    }
 }
 
 [HarmonyPatch]
@@ -116,6 +244,8 @@ public class Patch
 {
     public static Dictionary<int, CauseOfDeath> CausesOfDeath = new Dictionary<int, CauseOfDeath>();
     public static Dictionary<int, AbilitySelectCircle> AbilitySelectCircles = new Dictionary<int, AbilitySelectCircle>();
+    public static Dictionary<int, int> Killers = new Dictionary<int, int>();
+
     public static Dictionary<int, bool> IsRocking = new Dictionary<int, bool>();
     public static Dictionary<int, bool> IsDrilling = new Dictionary<int, bool>();
     public static Dictionary<int, bool> IsMeditating = new Dictionary<int, bool>();
@@ -136,20 +266,38 @@ public class Patch
 
         CauseOfDeath causeOfDeath = CausesOfDeath[id];
 
-        if (!Plugin.Assets.ContainsKey(causeOfDeath))
-        {
-            if (causeOfDeath != CauseOfDeath.Other)
-                Plugin.Logger.LogWarning($"No asset found for: {causeOfDeath}");
-
-            return;
-        }
-
         Plugin.Logger.LogInfo($"Setting alternate sprite {causeOfDeath} for player {id}");
 
-        AbilitySelectCircles[id].SetCharacterSprite(Plugin.Assets[causeOfDeath]);
+        // TODO: cleanup when everything is converted
+
+        if (Plugin.NewAssets.ContainsKey(causeOfDeath))
+        {
+            Color victimColor = PlayerHandler.Get().GetPlayer(id).Color.GetColor("_ShadowColor");
+
+            // We rely on the fact that player ids start from 1
+            Killers.TryGetValue(id, out int killerId);
+            Color? killerColor = PlayerHandler.Get().GetPlayer(killerId)?.Color.GetColor("_ShadowColor");
+
+            Sprite sprite = Plugin.NewAssets[causeOfDeath].Create(victimColor, killerColor);
+            AbilitySelectCircle abc = AbilitySelectCircles[id];
+
+            abc.SetCharacterSprite(sprite);
+
+            // We do the coloring manually, disable default material
+            Image[] characterImages = (Image[])Traverse.Create(abc.loser).Field("characterImages").GetValue();
+            characterImages[2].material = null;
+
+            Image character = (Image)Traverse.Create(abc.winner).Field("character").GetValue();
+            character.material = null;
+        }
+        else
+        {
+            AbilitySelectCircles[id].SetCharacterSprite(Plugin.Assets[causeOfDeath]);
+        }
 
         CausesOfDeath.Remove(id);
         AbilitySelectCircles.Remove(id);
+        Killers.Remove(id);
     }
 
     static private void SetCauseOfDeath(int id, CauseOfDeath causeOfDeath, bool overrideOriginal = false)
@@ -231,6 +379,7 @@ public class Patch
         Plugin.Logger.LogDebug("Resetting...");
         CausesOfDeath.Clear();
         AbilitySelectCircles.Clear();
+        Killers.Clear();
         IsRocking.Clear();
         IsDrilling.Clear();
         IsMeditating.Clear();
@@ -294,6 +443,8 @@ public class Patch
         else if (go.layer == LayerMask.NameToLayer("Projectile") && t.CompareTag("projectile"))
         {
             causeOfDeath = CauseOfDeath.Arrowed;
+            overrideOriginal = true; // The sprite shows you that you shot yourself
+            Killers[id] = go.GetComponent<Projectile>().GetComponent<IPlayerIdHolder>().GetPlayerId();
         }
         else if (go.layer == LayerMask.NameToLayer("LethalTerrain") && t.CompareTag("explosion"))
         {
@@ -310,6 +461,8 @@ public class Patch
             {
                 causeOfDeath = CauseOfDeath.Rolled;
             }
+
+            Killers[id] = ability.GetComponent<IPlayerIdHolder>().GetPlayerId();
         }
 
         SetCauseOfDeath(id, causeOfDeath, overrideOriginal);
@@ -407,7 +560,7 @@ public class Patch
         if (idh == null)
             return;
 
-        SetCauseOfDeath(idh.GetPlayerId(), CauseOfDeath.BlackHoled);
+        SetCauseOfDeath(idh.GetPlayerId(), CauseOfDeath.BlackHole);
     }
 
     [HarmonyPatch(typeof(BounceBall), nameof(BounceBall.OnEnterAbility))]
