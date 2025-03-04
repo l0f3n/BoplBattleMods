@@ -141,7 +141,9 @@ public class DeathSpriteCreator
     private Color[] vpxs;
     private Color[] kpxs;
 
-    private static int WIDTH = 400;
+    private int width;
+    private int height;
+
     private static float MAX_BRIGHTNESS = Color.green.grayscale;
 
     public DeathSpriteCreator(string name)
@@ -163,13 +165,13 @@ public class DeathSpriteCreator
         Plugin.Logger.LogDebug($"Loaded textures for {name} in {watch.ElapsedMilliseconds} ms");
     }
 
-    private static Color[] LoadPixels(string name)
+    private Color[] LoadPixels(string name)
     {
         Texture2D tex = LoadTexture(name);
-        return tex?.GetPixels() ?? new Color[WIDTH * WIDTH];
+        return tex?.GetPixels() ?? new Color[width * height];
     }
 
-    private static Texture2D LoadTexture(string name)
+    private Texture2D LoadTexture(string name)
     {
         string path = Path.Combine(Plugin.AssetsPath, $"{name}.png");
 
@@ -180,9 +182,14 @@ public class DeathSpriteCreator
         Texture2D tex = new Texture2D(2, 2);
         ImageConversion.LoadImage(tex, bytes);
 
-        if (tex.width != WIDTH || tex.height != WIDTH)
+        if (width == 0 || height == 0)
         {
-            Plugin.Logger.LogWarning($"Texture {path} has wrong dimensions {tex.width}x{tex.height}");
+            width = tex.width;
+            height = tex.height;
+        }
+        else if (tex.width != width || tex.height != height)
+        {
+            Plugin.Logger.LogWarning($"Texture {path} has wrong dimensions {tex.width}x{tex.height}, expected {width}x{height}");
         }
 
         // Doing all of this is probably useless, but im too lazy to delete it
@@ -203,7 +210,7 @@ public class DeathSpriteCreator
     {
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
-        Texture2D tex = new Texture2D(WIDTH, WIDTH, TextureFormat.RGBA32, true);
+        Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, true);
         tex.name = name;
         tex.filterMode = FilterMode.Bilinear;
 
@@ -214,7 +221,7 @@ public class DeathSpriteCreator
 
         Color killerColor = maybeKillerColor ?? new Color(1, 1, 1, 1);
 
-        Color[] bpxs = backgroundTex?.GetPixels() ?? new Color[WIDTH * WIDTH];
+        Color[] bpxs = backgroundTex?.GetPixels() ?? new Color[width * height];
 
         Parallel.For(0, bpxs.Length, i =>
         {
