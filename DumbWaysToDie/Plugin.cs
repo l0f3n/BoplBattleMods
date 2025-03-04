@@ -322,7 +322,13 @@ public class Patch
         if (p.IsAlive)
         {
             // This someimes triggers if we have clones or revives
-            Plugin.Logger.LogDebug($"Not settings cause of death {causeOfDeath} for player {id}, not actually dead yet");
+            Plugin.Logger.LogDebug($"Not setting cause of death {causeOfDeath} for player {id}, not actually dead yet");
+            return;
+        }
+
+        if (causeOfDeath == CauseOfDeath.Other)
+        {
+            Plugin.Logger.LogDebug($"Not setting cause of death {causeOfDeath} for player {id}, no specific cause of death set");
             return;
         }
 
