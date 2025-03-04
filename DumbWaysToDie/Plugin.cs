@@ -398,6 +398,7 @@ public class Patch
         {
             if (t.CompareTag("ChainLightning"))
             {
+                // Lightning between tesla coils
                 causeOfDeath = CauseOfDeath.Electrocuted;
             }
             else if (t.CompareTag("explosion"))
@@ -418,9 +419,17 @@ public class Patch
             overrideOriginal = true; // The sprite shows you that you shot yourself
             Killers[id] = go.GetComponent<Projectile>().GetComponent<IPlayerIdHolder>().GetPlayerId();
         }
-        else if (go.layer == LayerMask.NameToLayer("LethalTerrain") && t.CompareTag("explosion"))
+        else if (go.layer == LayerMask.NameToLayer("LethalTerrain"))
         {
-            causeOfDeath = CauseOfDeath.Sworded;
+            if (t.CompareTag("explosion"))
+            {
+                causeOfDeath = CauseOfDeath.Sworded;
+            }
+            else if (t.CompareTag("ChainLightning"))
+            {
+                // Actual tesla coil
+                causeOfDeath = CauseOfDeath.Electrocuted;
+            }
         }
         else if (go.layer == LayerMask.NameToLayer("Player") && t.CompareTag("Ability"))
         {
