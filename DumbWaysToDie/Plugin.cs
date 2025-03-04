@@ -64,7 +64,7 @@ public class Plugin : BaseUnityPlugin
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
-        AddDeathSpriteCreator(CauseOfDeath.Arrowed);
+        AddDeathSpriteCreator(CauseOfDeath.Arrowed, BlendMode.Killer);
         AddDeathSpriteCreator(CauseOfDeath.BlackHole);
         AddDeathSpriteCreator(CauseOfDeath.Buddha);
         AddDeathSpriteCreator(CauseOfDeath.Clouds);
@@ -78,10 +78,10 @@ public class Plugin : BaseUnityPlugin
         AddDeathSpriteCreator(CauseOfDeath.Leashed);
         AddDeathSpriteCreator(CauseOfDeath.Macho);
         AddDeathSpriteCreator(CauseOfDeath.Meditating);
-        AddDeathSpriteCreator(CauseOfDeath.Meteored);
-        AddDeathSpriteCreator(CauseOfDeath.Rocked);
+        AddDeathSpriteCreator(CauseOfDeath.Meteored, BlendMode.Blend);
+        AddDeathSpriteCreator(CauseOfDeath.Rocked, BlendMode.Victim);
         AddDeathSpriteCreator(CauseOfDeath.Rocking);
-        AddDeathSpriteCreator(CauseOfDeath.Rolled);
+        AddDeathSpriteCreator(CauseOfDeath.Rolled, BlendMode.Blend);
         AddDeathSpriteCreator(CauseOfDeath.Sworded);
         AddDeathSpriteCreator(CauseOfDeath.Space);
 
@@ -93,15 +93,23 @@ public class Plugin : BaseUnityPlugin
         harmony.PatchAll(typeof(Patch));
     }
 
-    static private void AddDeathSpriteCreator(CauseOfDeath causeOfDeath)
+    static private void AddDeathSpriteCreator(CauseOfDeath causeOfDeath, BlendMode blendMode = BlendMode.Blend)
     {
-        Assets.Add(causeOfDeath, new DeathSpriteCreator(causeOfDeath.ToString()));
+        Assets.Add(causeOfDeath, new DeathSpriteCreator(causeOfDeath.ToString(), blendMode));
     }
+}
+
+public enum BlendMode
+{
+    Killer,
+    Victim,
+    Blend,
 }
 
 public class DeathSpriteCreator
 {
     private string name;
+    private BlendMode blendMode;
 
     private Color[] vpxs;
     private Color[] kpxs;
@@ -111,9 +119,10 @@ public class DeathSpriteCreator
 
     private static float MAX_BRIGHTNESS = Color.green.grayscale;
 
-    public DeathSpriteCreator(string name)
+    public DeathSpriteCreator(string name, BlendMode blendMode)
     {
         this.name = name;
+        this.blendMode = blendMode;
         LoadAllTextures();
     }
 
@@ -193,7 +202,19 @@ public class DeathSpriteCreator
 
             Color v = IsGreen(vpxs[i]) ? Color.Lerp(Color.clear, victimColor, vpxs[i].grayscale / MAX_BRIGHTNESS) : vpxs[i];
             Color k = IsGreen(kpxs[i]) ? Color.Lerp(Color.clear, killerColor, kpxs[i].grayscale / MAX_BRIGHTNESS) : kpxs[i];
-            pixels[i] = Color.Lerp(v, k, (k.a / (v.a + k.a)));
+
+            if (blendMode == BlendMode.Victim && v.a != 0)
+            {
+                pixels[i] = v;
+            }
+            else if (blendMode == BlendMode.Killer && k.a != 0)
+            {
+                pixels[i] = k;
+            }
+            else
+            {
+                pixels[i] = Color.Lerp(v, k, (k.a / (v.a + k.a)));
+            }
         });
 
         tex.SetPixels(pixels);
