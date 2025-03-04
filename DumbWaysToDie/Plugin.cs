@@ -28,6 +28,7 @@ public enum CauseOfDeath
     Leashed,
     Macho,
     Meditating,
+    Meteored,
     Rocked,
     Rocking,
     Rolled,
@@ -77,6 +78,7 @@ public class Plugin : BaseUnityPlugin
         AddDeathSpriteCreator(CauseOfDeath.Leashed);
         AddDeathSpriteCreator(CauseOfDeath.Macho);
         AddDeathSpriteCreator(CauseOfDeath.Meditating);
+        AddDeathSpriteCreator(CauseOfDeath.Meteored);
         AddDeathSpriteCreator(CauseOfDeath.Rocked);
         AddDeathSpriteCreator(CauseOfDeath.Rocking);
         AddDeathSpriteCreator(CauseOfDeath.Rolled);
@@ -232,6 +234,12 @@ public class Patch
         }
 
         CauseOfDeath causeOfDeath = CausesOfDeath[id];
+
+        if (!Plugin.Assets.ContainsKey(causeOfDeath))
+        {
+            Plugin.Logger.LogError($"Not setting alternate sprite, no death sprite creator for cause of death {causeOfDeath}");
+            return;
+        }
 
         Plugin.Logger.LogInfo($"Setting alternate sprite {causeOfDeath} for player {id}");
 
@@ -424,6 +432,10 @@ public class Patch
             else if (ability.ToString().Contains("Roll"))
             {
                 causeOfDeath = CauseOfDeath.Rolled;
+            }
+            else if (ability.ToString().Contains("Meteor"))
+            {
+                causeOfDeath = CauseOfDeath.Meteored;
             }
 
             Killers[id] = ability.GetComponent<IPlayerIdHolder>().GetPlayerId();
