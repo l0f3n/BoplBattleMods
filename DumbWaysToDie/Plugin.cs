@@ -136,8 +136,6 @@ public class DeathSpriteCreator
 {
     private string name;
 
-    private Texture2D backgroundTex;
-
     private Color[] vpxs;
     private Color[] kpxs;
 
@@ -156,8 +154,6 @@ public class DeathSpriteCreator
     {
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
-        // TODO: remove background, we dont need to support it
-        backgroundTex = LoadTexture($"{name}-background");
         vpxs = LoadPixels($"{name}");
         kpxs = LoadPixels($"{name}-Killer");
 
@@ -221,19 +217,19 @@ public class DeathSpriteCreator
 
         Color killerColor = maybeKillerColor ?? new Color(1, 1, 1, 1);
 
-        Color[] bpxs = backgroundTex?.GetPixels() ?? new Color[width * height];
+        Color[] pixels = new Color[width * height];
 
-        Parallel.For(0, bpxs.Length, i =>
+        Parallel.For(0, pixels.Length, i =>
         {
             if (vpxs[i].a == 0 && kpxs[i].a == 0)
                 return;
 
             Color v = IsGreen(vpxs[i]) ? Color.Lerp(Color.clear, victimColor, vpxs[i].grayscale / MAX_BRIGHTNESS) : vpxs[i];
             Color k = IsGreen(kpxs[i]) ? Color.Lerp(Color.clear, killerColor, kpxs[i].grayscale / MAX_BRIGHTNESS) : kpxs[i];
-            bpxs[i] = Color.Lerp(v, k, (k.a / (v.a + k.a)));
+            pixels[i] = Color.Lerp(v, k, (k.a / (v.a + k.a)));
         });
 
-        tex.SetPixels(bpxs);
+        tex.SetPixels(pixels);
         tex.Apply();
 
         // FullRect for performance: https://discussions.unity.com/t/any-way-to-speed-up-sprite-create/700273/12
