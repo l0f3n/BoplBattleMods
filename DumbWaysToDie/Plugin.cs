@@ -558,15 +558,9 @@ public class Patch
         if (collision.layer != LayerMask.NameToLayer("Player"))
             return;
 
-        PlayerCollision pc = collision.colliderPP.fixTrans.gameObject.GetComponent<PlayerCollision>();
-        if (pc == null)
-            return;
+        int id = collision.colliderPP.fixTrans.gameObject.GetComponent<IPlayerIdHolder>().GetPlayerId();
 
-        IPlayerIdHolder idh = (IPlayerIdHolder)Traverse.Create(pc).Field("playerIdHolder").GetValue();
-        if (idh == null)
-            return;
-
-        SetCauseOfDeath(idh.GetPlayerId(), CauseOfDeath.BlackHole);
+        SetCauseOfDeath(id, CauseOfDeath.BlackHole);
     }
 
     [HarmonyPatch(typeof(BounceBall), nameof(BounceBall.OnEnterAbility))]
