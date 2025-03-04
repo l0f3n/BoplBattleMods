@@ -42,8 +42,7 @@ public class Plugin : BaseUnityPlugin
 
     internal static ConfigEntry<bool> Debug;
 
-    public static Dictionary<CauseOfDeath, Sprite> Assets = new Dictionary<CauseOfDeath, Sprite>();
-    public static Dictionary<CauseOfDeath, DeathSpriteCreator> NewAssets = new Dictionary<CauseOfDeath, DeathSpriteCreator>();
+    public static Dictionary<CauseOfDeath, DeathSpriteCreator> Assets = new Dictionary<CauseOfDeath, DeathSpriteCreator>();
     public static string AssetsPath;
 
     private void Awake()
@@ -64,10 +63,6 @@ public class Plugin : BaseUnityPlugin
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
-        Assets.Add(CauseOfDeath.Rocking, LoadSprite("Rocking.png"));
-
-        // TODO: Convert all to the new order
-
         AddDeathSpriteCreator(CauseOfDeath.Arrowed);
         AddDeathSpriteCreator(CauseOfDeath.BlackHole);
         AddDeathSpriteCreator(CauseOfDeath.Buddha);
@@ -83,6 +78,7 @@ public class Plugin : BaseUnityPlugin
         AddDeathSpriteCreator(CauseOfDeath.Macho);
         AddDeathSpriteCreator(CauseOfDeath.Meditating);
         AddDeathSpriteCreator(CauseOfDeath.Rocked);
+        AddDeathSpriteCreator(CauseOfDeath.Rocking);
         AddDeathSpriteCreator(CauseOfDeath.Rolled);
         AddDeathSpriteCreator(CauseOfDeath.Sworded);
         AddDeathSpriteCreator(CauseOfDeath.Space);
@@ -97,38 +93,7 @@ public class Plugin : BaseUnityPlugin
 
     static private void AddDeathSpriteCreator(CauseOfDeath causeOfDeath)
     {
-        NewAssets.Add(causeOfDeath, new DeathSpriteCreator(causeOfDeath.ToString()));
-    }
-
-    // TODO: delete when its not used anymore
-    static private Sprite LoadSprite(string name)
-    {
-        var watch = System.Diagnostics.Stopwatch.StartNew();
-
-        string path = Path.Combine(AssetsPath, name);
-
-        Texture2D tex = new Texture2D(2, 2);
-
-        if (!File.Exists(path))
-            return null;
-
-        byte[] bytes = File.ReadAllBytes(path);
-        ImageConversion.LoadImage(tex, bytes);
-
-        // Doing all of this is probably useless, but im too lazy to delete it
-        Texture2D newTex = new Texture2D(tex.width, tex.height, TextureFormat.RGBA32, true);
-        newTex.name = name;
-        newTex.filterMode = FilterMode.Bilinear;
-        newTex.SetPixels(tex.GetPixels());
-        newTex.Apply();
-
-        Sprite sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 60);
-
-        watch.Stop();
-
-        Logger.LogDebug($"Loaded sprite '{name}' in {watch.ElapsedMilliseconds} ms");
-
-        return sprite;
+        Assets.Add(causeOfDeath, new DeathSpriteCreator(causeOfDeath.ToString()));
     }
 }
 
@@ -270,32 +235,23 @@ public class Patch
 
         Plugin.Logger.LogInfo($"Setting alternate sprite {causeOfDeath} for player {id}");
 
-        // TODO: cleanup when everything is converted
+        Color victimColor = PlayerHandler.Get().GetPlayer(id).Color.GetColor("_ShadowColor");
 
-        if (Plugin.NewAssets.ContainsKey(causeOfDeath))
-        {
-            Color victimColor = PlayerHandler.Get().GetPlayer(id).Color.GetColor("_ShadowColor");
+        // We rely on the fact that player ids start from 1
+        Killers.TryGetValue(id, out int killerId);
+        Color? killerColor = PlayerHandler.Get().GetPlayer(killerId)?.Color.GetColor("_ShadowColor");
 
-            // We rely on the fact that player ids start from 1
-            Killers.TryGetValue(id, out int killerId);
-            Color? killerColor = PlayerHandler.Get().GetPlayer(killerId)?.Color.GetColor("_ShadowColor");
+        Sprite sprite = Plugin.Assets[causeOfDeath].Create(victimColor, killerColor);
+        AbilitySelectCircle abc = AbilitySelectCircles[id];
 
-            Sprite sprite = Plugin.NewAssets[causeOfDeath].Create(victimColor, killerColor);
-            AbilitySelectCircle abc = AbilitySelectCircles[id];
+        abc.SetCharacterSprite(sprite);
 
-            abc.SetCharacterSprite(sprite);
+        // We do the coloring manually, disable default material
+        Image[] characterImages = (Image[])Traverse.Create(abc.loser).Field("characterImages").GetValue();
+        characterImages[2].material = null;
 
-            // We do the coloring manually, disable default material
-            Image[] characterImages = (Image[])Traverse.Create(abc.loser).Field("characterImages").GetValue();
-            characterImages[2].material = null;
-
-            Image character = (Image)Traverse.Create(abc.winner).Field("character").GetValue();
-            character.material = null;
-        }
-        else
-        {
-            AbilitySelectCircles[id].SetCharacterSprite(Plugin.Assets[causeOfDeath]);
-        }
+        Image character = (Image)Traverse.Create(abc.winner).Field("character").GetValue();
+        character.material = null;
 
         CausesOfDeath.Remove(id);
         AbilitySelectCircles.Remove(id);
