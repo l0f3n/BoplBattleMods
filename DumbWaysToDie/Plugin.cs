@@ -42,6 +42,7 @@ public class Plugin : BaseUnityPlugin
     internal static new ManualLogSource Logger;
 
     internal static ConfigEntry<bool> Debug;
+    internal static ConfigEntry<float> ScaleFactor;
 
     public static Dictionary<CauseOfDeath, DeathSpriteCreator> Assets = new Dictionary<CauseOfDeath, DeathSpriteCreator>();
     public static string AssetsPath;
@@ -51,6 +52,7 @@ public class Plugin : BaseUnityPlugin
         Logger = base.Logger;
 
         Debug = Config.Bind("General", "Debug mode", false, "Always reload textures from files.");
+        ScaleFactor = Config.Bind("General", "Sprite Scale Factor", 1.1f, "Factor to scale custom sprites by");
 
         string basePath = Path.GetDirectoryName(((BaseUnityPlugin)this).Info.Location);
         string assetsPath = Path.Combine(basePath, "Assets");
@@ -278,10 +280,12 @@ public class Patch
         // We do the coloring manually, disable default material
         Image[] characterImages = (Image[])Traverse.Create(abc.loser).Field("characterImages").GetValue();
         characterImages[2].material = null;
+        characterImages[2].rectTransform.localScale = new Vector3(Plugin.ScaleFactor.Value, Plugin.ScaleFactor.Value, 1);
 
         Image character = (Image)Traverse.Create(abc.winner).Field("character").GetValue();
         character.material = null;
 
+        // Probably not necessary, but just to be safe
         CausesOfDeath.Remove(id);
         AbilitySelectCircles.Remove(id);
         Killers.Remove(id);
