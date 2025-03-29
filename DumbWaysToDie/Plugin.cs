@@ -75,7 +75,7 @@ public class Plugin : BaseUnityPlugin
         AddDeathSpriteCreator(CauseOfDeath.Drowned);
         AddDeathSpriteCreator(CauseOfDeath.Electrocuted);
         AddDeathSpriteCreator(CauseOfDeath.Exploded);
-        AddDeathSpriteCreator(CauseOfDeath.Froze);
+        AddDeathSpriteCreator(CauseOfDeath.Froze, BlendMode.Blend);
         AddDeathSpriteCreator(CauseOfDeath.Invisible);
         AddDeathSpriteCreator(CauseOfDeath.Leashed);
         AddDeathSpriteCreator(CauseOfDeath.Macho);
