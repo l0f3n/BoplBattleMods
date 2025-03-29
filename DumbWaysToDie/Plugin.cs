@@ -80,7 +80,7 @@ public class Plugin : BaseUnityPlugin
         AddDeathSpriteCreator(CauseOfDeath.Leashed);
         AddDeathSpriteCreator(CauseOfDeath.Macho);
         AddDeathSpriteCreator(CauseOfDeath.Meditating);
-        AddDeathSpriteCreator(CauseOfDeath.Meteored, BlendMode.Blend);
+        AddDeathSpriteCreator(CauseOfDeath.Meteored, BlendMode.Killer);
         AddDeathSpriteCreator(CauseOfDeath.Rocked, BlendMode.Victim);
         AddDeathSpriteCreator(CauseOfDeath.Rocking);
         AddDeathSpriteCreator(CauseOfDeath.Rolled, BlendMode.Blend);
@@ -431,6 +431,15 @@ public class Patch
                 if (go.ToString().Contains("invisibleHitbox"))
                 {
                     causeOfDeath = CauseOfDeath.Drilled;
+                }
+                else
+                {
+                    // This is a weird one. If the meteor lands sligthly beside
+                    // a bopl on the ground, it will die by the actual explosion
+                    // from the the meteor and not the meteor itself. This may
+                    // cause meteor to show up in some places it should not, I
+                    // dont know yet.
+                    causeOfDeath = CauseOfDeath.Meteored;
                 }
             }
             else
