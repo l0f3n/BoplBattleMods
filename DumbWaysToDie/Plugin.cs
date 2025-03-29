@@ -14,9 +14,9 @@ namespace DumbWaysToDie;
 public enum CauseOfDeath
 {
     Other,
+    Age,
     Arrowed,
     BlackHole,
-    Buddha,
     Clouds,
     Drilled,
     Drilling,
@@ -68,9 +68,9 @@ public class Plugin : BaseUnityPlugin
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
+        AddDeathSpriteCreator(CauseOfDeath.Age);
         AddDeathSpriteCreator(CauseOfDeath.Arrowed, BlendMode.Killer);
         AddDeathSpriteCreator(CauseOfDeath.BlackHole);
-        AddDeathSpriteCreator(CauseOfDeath.Buddha);
         AddDeathSpriteCreator(CauseOfDeath.Clouds);
         AddDeathSpriteCreator(CauseOfDeath.Drilled);
         AddDeathSpriteCreator(CauseOfDeath.Drilling);
@@ -355,7 +355,7 @@ public class Patch
 
         if (GameTime.IsTimeStopped() && player.isProtectedFromTimeStop)
         {
-            causeOfDeath = CauseOfDeath.Buddha;
+            causeOfDeath = CauseOfDeath.Age;
         }
         else if (player.isInvisible)
         {
