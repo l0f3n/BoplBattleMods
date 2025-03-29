@@ -52,7 +52,7 @@ public class Plugin : BaseUnityPlugin
         Logger = base.Logger;
 
         Debug = Config.Bind("General", "Debug mode", false, "Always reload textures from files.");
-        ScaleFactor = Config.Bind("General", "Sprite Scale Factor", 1.1f, "Factor to scale custom sprites by");
+        ScaleFactor = Config.Bind("General", "Sprite Scale Factor", 1.2f, "Custom sprites appear slightly smaller in game and need to be scaled a bit");
 
         string basePath = Path.GetDirectoryName(((BaseUnityPlugin)this).Info.Location);
         string assetsPath = Path.Combine(basePath, "Assets");
