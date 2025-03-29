@@ -89,7 +89,7 @@ public class Plugin : BaseUnityPlugin
 
         watch.Stop();
 
-        Logger.LogInfo($"Plugin Dumb Ways to Die was loaded in {watch.ElapsedMilliseconds} ms!");
+        Logger.LogInfo($"Plugin Dumb Ways to Die ({Assets.Count} custom death sprites) was loaded in {watch.ElapsedMilliseconds} ms!");
 
         Harmony harmony = new("lofen.dumbWaysToDie");
         harmony.PatchAll(typeof(Patch));
