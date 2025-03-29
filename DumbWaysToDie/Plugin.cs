@@ -52,7 +52,7 @@ public class Plugin : BaseUnityPlugin
         Logger = base.Logger;
 
         Debug = Config.Bind("General", "Debug mode", false, "Always reload textures from files.");
-        ScaleFactor = Config.Bind("General", "Sprite Scale Factor", 1.2f, "Custom sprites appear slightly smaller in game and need to be scaled a bit");
+        ScaleFactor = Config.Bind("General", "Sprite Scale Factor", 1.1f, "Custom sprites appear slightly smaller in game and need to be scaled a bit");
 
         string basePath = Path.GetDirectoryName(((BaseUnityPlugin)this).Info.Location);
         string assetsPath = Path.Combine(basePath, "Assets");
@@ -284,6 +284,7 @@ public class Patch
 
         Image character = (Image)Traverse.Create(abc.winner).Field("character").GetValue();
         character.material = null;
+        characterImages[2].rectTransform.localScale = new Vector3(Plugin.ScaleFactor.Value, Plugin.ScaleFactor.Value, 1);
 
         // Probably not necessary, but just to be safe
         CausesOfDeath.Remove(id);
