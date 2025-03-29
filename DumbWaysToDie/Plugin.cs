@@ -29,6 +29,8 @@ public enum CauseOfDeath
     Macho,
     Meditating,
     Meteored,
+    MeteoringSpace,
+    MeteoringWater,
     Rocked,
     Rocking,
     Rolled,
@@ -81,6 +83,8 @@ public class Plugin : BaseUnityPlugin
         AddDeathSpriteCreator(CauseOfDeath.Macho);
         AddDeathSpriteCreator(CauseOfDeath.Meditating);
         AddDeathSpriteCreator(CauseOfDeath.Meteored, BlendMode.Killer);
+        AddDeathSpriteCreator(CauseOfDeath.MeteoringSpace);
+        AddDeathSpriteCreator(CauseOfDeath.MeteoringWater);
         AddDeathSpriteCreator(CauseOfDeath.Rocked, BlendMode.Victim);
         AddDeathSpriteCreator(CauseOfDeath.Rocking);
         AddDeathSpriteCreator(CauseOfDeath.Rolled, BlendMode.Blend);
@@ -241,6 +245,7 @@ public class Patch
     public static Dictionary<int, bool> IsRocking = new Dictionary<int, bool>();
     public static Dictionary<int, bool> IsDrilling = new Dictionary<int, bool>();
     public static Dictionary<int, bool> IsMeditating = new Dictionary<int, bool>();
+    public static Dictionary<int, bool> IsMeteoring = new Dictionary<int, bool>();
 
     static private void TrySetAlternateSprite(int id)
     {
@@ -294,6 +299,14 @@ public class Patch
 
     static private void SetCauseOfDeath(int id, CauseOfDeath causeOfDeath, bool overrideOriginal = false)
     {
+        if (causeOfDeath == CauseOfDeath.MeteoringWater || causeOfDeath == CauseOfDeath.MeteoringSpace)
+        {
+            // Special hack since we exit the meteor ability before we die, so
+            // the reset needs to happen a little bit later, otherwise we
+            // cannot detect it
+            IsMeteoring[id] = false;
+        }
+
         if (GameSessionHandler.HasGameEnded())
         {
             // Bopls are sometimes randomly killed after the games ends
@@ -334,9 +347,11 @@ public class Patch
         CauseOfDeath causeOfDeath = CauseOfDeath.Other;
 
         Player player = PlayerHandler.Get().GetPlayer(id);
+
         IsRocking.TryGetValue(player.Id, out bool isRocking);
         IsMeditating.TryGetValue(player.Id, out bool isMeditating);
         IsDrilling.TryGetValue(player.Id, out bool isDrilling);
+        IsMeteoring.TryGetValue(player.Id, out bool isMeteoring);
 
         if (GameTime.IsTimeStopped() && player.isProtectedFromTimeStop)
         {
@@ -366,6 +381,20 @@ public class Patch
         {
             causeOfDeath = CauseOfDeath.Drilling;
         }
+        else if (isMeteoring)
+        {
+            if (player.Position.y < SceneBounds.WaterHeight)
+            {
+                if (Constants.leveltype == LevelType.space)
+                {
+                    causeOfDeath = CauseOfDeath.MeteoringSpace;
+                }
+                else
+                {
+                    causeOfDeath = CauseOfDeath.MeteoringWater;
+                }
+            }
+        }
 
         return causeOfDeath;
     }
@@ -381,6 +410,7 @@ public class Patch
         IsRocking.Clear();
         IsDrilling.Clear();
         IsMeditating.Clear();
+        IsMeteoring.Clear();
     }
 
     [HarmonyPatch(typeof(AbilitySelectCircle), "SetPlayer")]
@@ -469,6 +499,7 @@ public class Patch
         else if (go.layer == LayerMask.NameToLayer("Player") && t.CompareTag("Ability"))
         {
             Ability ability = go.GetComponent<Ability>();
+
             if (ability.ToString().Contains("Rock"))
             {
                 causeOfDeath = CauseOfDeath.Rocked;
@@ -617,6 +648,20 @@ public class Patch
     public static void DrillExitPost(ref PlayerInfo ___playerInfo)
     {
         IsDrilling[___playerInfo.playerId] = false;
+    }
+
+    [HarmonyPatch(typeof(MeteorSmash), nameof(MeteorSmash.OnEnterAbility))]
+    [HarmonyPostfix]
+    public static void MeteorOnEnterPost(ref PlayerInfo ___playerInfo)
+    {
+        IsMeteoring[___playerInfo.playerId] = true;
+    }
+
+    [HarmonyPatch(typeof(MeteorSmash), "ExitAbilityGrounded")]
+    [HarmonyPostfix]
+    public static void MeteorOnExitGroundedPost(ref PlayerInfo ___playerInfo)
+    {
+        IsMeteoring[___playerInfo.playerId] = false;
     }
 
 }
