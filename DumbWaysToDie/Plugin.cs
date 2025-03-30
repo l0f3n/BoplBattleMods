@@ -197,7 +197,10 @@ public class DeathSpriteCreator
             LoadAllTextures();
         }
 
-        Color killerColor = maybeKillerColor ?? new Color(1, 1, 1, 1);
+        // If we for some reason dont have a killer color but still have a
+        // killer to color, make it the default green color so the error is
+        // easy to spot
+        Color killerColor = maybeKillerColor ?? Color.green;
 
         Color[] pixels = new Color[width * height];
 
@@ -471,6 +474,7 @@ public class Patch
                     // cause meteor to show up in some places it should not, I
                     // dont know yet.
                     causeOfDeath = CauseOfDeath.Meteored;
+                    Killers[id] = go.GetComponent<Explosion>().PlayerOwnerId;
                 }
             }
             else
