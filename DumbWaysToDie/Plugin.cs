@@ -56,6 +56,9 @@ public class Plugin : BaseUnityPlugin
         Debug = Config.Bind("General", "Debug mode", false, "Always reload textures from files.");
         ScaleFactor = Config.Bind("General", "Sprite Scale Factor", 1.1f, "Custom sprites appear slightly smaller in game and need to be scaled a bit");
 
+        // This mod only changes some sprites, no unfair matchmaking or desyncs
+        CharacterSelectHandler_online.clientSideMods_you_can_increment_this_to_enable_matchmaking_for_your_mods__please_dont_use_it_to_cheat_thats_really_cringe_especially_if_its_desyncing_others___you_didnt_even_win_on_your_opponents_screen___I_cannot_imagine_a_sadder_existence += 1;
+
         string basePath = Path.GetDirectoryName(((BaseUnityPlugin)this).Info.Location);
         string assetsPath = Path.Combine(basePath, "Assets");
 
