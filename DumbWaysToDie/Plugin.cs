@@ -295,7 +295,7 @@ public class Patch
 
         Image character = (Image)Traverse.Create(abc.winner).Field("character").GetValue();
         character.material = null;
-        characterImages[2].rectTransform.localScale = new Vector3(Plugin.ScaleFactor.Value, Plugin.ScaleFactor.Value, 1);
+        character.rectTransform.localScale = new Vector3(Plugin.ScaleFactor.Value, Plugin.ScaleFactor.Value, 1);
 
         // Probably not necessary, but just to be safe
         CausesOfDeath.Remove(id);
