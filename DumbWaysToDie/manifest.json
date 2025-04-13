@@ -1,0 +1,9 @@
+{
+  "name": "Dumb Ways to Die",
+  "version_number": "1.0.0",
+  "website_url": "https://github.com/l0f3n/BoplBattleMods",
+  "description": "Adds 20+ new death sprites",
+  "dependencies": [
+    "BepInEx-BepInExPack-5.4.2100"
+  ]
+}
